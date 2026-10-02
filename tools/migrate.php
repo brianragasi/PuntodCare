@@ -28,12 +28,18 @@ try {
     );
     $server->exec('CREATE DATABASE IF NOT EXISTS `' . $databaseName . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
     $server->exec('USE `' . $databaseName . '`');
-    $sql = file_get_contents(dirname(__DIR__) . '/database/001_accounts.sql');
-    if ($sql === false) throw new RuntimeException('Migration file is missing.');
-    foreach (explode(';', $sql) as $statement) {
-        if (trim($statement) !== '') $server->exec($statement);
+    $files = glob(dirname(__DIR__) . '/database/[0-9]*.sql');
+    if (!$files) throw new RuntimeException('Migration files are missing.');
+    sort($files, SORT_STRING);
+    foreach ($files as $file) {
+        $sql = file_get_contents($file);
+        if ($sql === false) throw new RuntimeException('Cannot read migration file.');
+        foreach (explode(';', $sql) as $statement) {
+            if (trim($statement) !== '') $server->exec($statement);
+        }
+        echo 'Applied ' . basename($file) . ".\n";
     }
-    echo "Accounts migration applied to {$databaseName}.\n";
+    echo "Migrations applied to {$databaseName}.\n";
 } catch (Throwable $exception) {
     fwrite(STDERR, "Migration failed: {$exception->getMessage()}\n");
     exit(1);

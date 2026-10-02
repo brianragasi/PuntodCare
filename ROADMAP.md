@@ -12,7 +12,7 @@ Build a mobile-friendly pilot for one partner cemetery. A family registers a gra
 
 The phases below define dependencies, not fixed delivery dates. Complete and verify one feature at a time, then explain it before moving on.
 
-**Current progress (October 2, 2026): Phases 1 and 2 complete.** The shared design, database-backed family and caretaker accounts, login/logout, server-side permissions, caretaker review, and controlled administrator setup are implemented. The administrator's account counts are live. Grave profiles and service requests are still labeled examples. Phase 3 is the basic administrator panel for cemetery records and service offerings.
+**Current progress (October 2, 2026): Phases 1–3 complete.** The shared design, database-backed accounts, login/logout, permissions, caretaker review, and administrator catalog for cemeteries, plot references, caretaker authorizations, services, and pilot prices are implemented. Catalog changes and price history are recorded. Family grave profiles and service requests are still labeled examples; they begin in Phases 4 and 5.
 
 ## 1. Foundation and shared design
 
@@ -62,7 +62,7 @@ Identify users and control who can see records and perform actions.
 - Manage the pilot cemetery, sections, blocks/rows, and lot references.
 - Review caretaker details and verification status.
 - Manage service offerings, descriptions, availability, and pilot prices.
-- Search family accounts and grave records within authorized administrative duties.
+- Search family accounts and plot references within authorized administrative duties. Search of family grave profiles follows when those records exist in Phase 4.
 - Record important administrative changes.
 
 ### Purpose

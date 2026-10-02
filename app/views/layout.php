@@ -11,6 +11,10 @@ $pageTitle = match ($page) {
     'components' => 'Interface kit',
     'account' => 'My account',
     'caretakers' => 'Caretaker review',
+    'cemeteries' => 'Cemeteries',
+    'plots' => 'Plot references',
+    'services' => 'Service catalog',
+    'families' => 'Family directory',
     default => $overviewTitle,
 };
 ?>
@@ -49,12 +53,18 @@ $pageTitle = match ($page) {
             <nav aria-label="Primary" class="sidebar-nav">
                 <p class="nav-caption">YOUR SPACE</p>
                 <a href="<?= e(app_url($role)) ?>" class="nav-link<?= $page === 'overview' ? ' is-active' : '' ?>" <?= $page === 'overview' ? 'aria-current="page"' : '' ?>><?= icon('grid') ?><span><?= e($overviewTitle) ?></span></a>
-                <?php if ($role === 'admin'): ?><a href="?page=caretakers" class="nav-link<?= $page === 'caretakers' ? ' is-active' : '' ?>" <?= $page === 'caretakers' ? 'aria-current="page"' : '' ?>><?= icon('shield') ?><span>Caretaker review</span></a><?php endif; ?>
+                <?php if ($role === 'admin'): ?>
+                <p class="nav-caption nav-caption-spaced">MANAGE PILOT</p>
+                <a href="?page=cemeteries" class="nav-link<?= $page === 'cemeteries' ? ' is-active' : '' ?>" <?= $page === 'cemeteries' ? 'aria-current="page"' : '' ?>><?= icon('pin') ?><span>Cemeteries</span></a>
+                <a href="?page=plots" class="nav-link<?= $page === 'plots' ? ' is-active' : '' ?>" <?= $page === 'plots' ? 'aria-current="page"' : '' ?>><?= icon('grid') ?><span>Plot references</span></a>
+                <a href="?page=services" class="nav-link<?= $page === 'services' ? ' is-active' : '' ?>" <?= $page === 'services' ? 'aria-current="page"' : '' ?>><?= icon('flower') ?><span>Service catalog</span></a>
+                <a href="?page=caretakers" class="nav-link<?= $page === 'caretakers' ? ' is-active' : '' ?>" <?= $page === 'caretakers' ? 'aria-current="page"' : '' ?>><?= icon('shield') ?><span>Caretaker review</span></a>
+                <a href="?page=families" class="nav-link<?= $page === 'families' ? ' is-active' : '' ?>" <?= $page === 'families' ? 'aria-current="page"' : '' ?>><?= icon('users') ?><span>Family directory</span></a>
+                <?php endif; ?>
                 <a href="?page=account" class="nav-link<?= $page === 'account' ? ' is-active' : '' ?>" <?= $page === 'account' ? 'aria-current="page"' : '' ?>><?= icon('users') ?><span>My account</span></a>
                 <a href="<?= e(app_url($role, 'components')) ?>" class="nav-link<?= $isComponents ? ' is-active' : '' ?>" <?= $isComponents ? 'aria-current="page"' : '' ?>><?= icon('sparkle') ?><span>Interface kit</span></a>
                 <p class="nav-caption nav-caption-spaced">COMING IN LATER PHASES</p>
                 <?php if ($role === 'admin'): ?>
-                    <span class="nav-link nav-pending"><?= icon('pin') ?><span>Cemetery records</span><small>Later</small></span>
                     <span class="nav-link nav-pending"><?= icon('document') ?><span>Service requests</span><small>Later</small></span>
                 <?php elseif ($role === 'family'): ?>
                     <span class="nav-link nav-pending"><?= icon('heart') ?><span>My graves</span><small>Later</small></span>
@@ -93,8 +103,16 @@ $pageTitle = match ($page) {
 
         <main id="main-content" class="page-content" tabindex="-1">
             <?php if ($flash): ?><div class="alert account-flash <?= $flash['type'] === 'error' ? 'account-flash-error' : '' ?>" role="status"><?= icon($flash['type'] === 'error' ? 'close' : 'check', 'size-5') ?><span><?= e($flash['message']) ?></span></div><?php endif; ?>
-            <?php if (in_array($page, ['overview', 'components'], true)): ?><div class="preview-banner" role="note"><?= icon('sparkle', 'size-4') ?><strong>Workspace preview</strong><span>Your account is real. Graves, requests, and dashboard figures are examples until later phases.</span></div><?php endif; ?>
-            <?php if ($page === 'caretakers'): ?>
+            <?php if (in_array($page, ['overview', 'components'], true)): ?><div class="preview-banner" role="note"><?= icon('sparkle', 'size-4') ?><strong>Workspace preview</strong><span>Accounts and pilot catalog records are live. Grave profiles and service requests are examples until later phases.</span></div><?php endif; ?>
+            <?php if ($page === 'cemeteries'): ?>
+                <?php require __DIR__ . '/pages/cemeteries.php'; ?>
+            <?php elseif ($page === 'plots'): ?>
+                <?php require __DIR__ . '/pages/plots.php'; ?>
+            <?php elseif ($page === 'services'): ?>
+                <?php require __DIR__ . '/pages/services.php'; ?>
+            <?php elseif ($page === 'families'): ?>
+                <?php require __DIR__ . '/pages/families.php'; ?>
+            <?php elseif ($page === 'caretakers'): ?>
                 <?php require __DIR__ . '/pages/caretakers.php'; ?>
             <?php elseif ($page === 'account'): ?>
                 <?php require __DIR__ . '/pages/account.php'; ?>

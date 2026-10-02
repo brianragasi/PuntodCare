@@ -5,7 +5,8 @@
   "scripts": {
     "build:css": "tailwindcss -i ./resources/css/app.css -o ./public/assets/app.css --minify",
     "watch:css": "tailwindcss -i ./resources/css/app.css -o ./public/assets/app.css --watch",
-    "test:ui": "node ./tools/verify-ui.mjs"
+    "test:ui": "node ./tools/verify-ui.mjs",
+    "test:admin": "node ./tools/verify-admin.mjs"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.0",

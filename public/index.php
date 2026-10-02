@@ -5,6 +5,7 @@ require_once dirname(__DIR__) . '/app/helpers.php';
 require_once dirname(__DIR__) . '/app/database.php';
 require_once dirname(__DIR__) . '/app/security.php';
 require_once dirname(__DIR__) . '/app/auth.php';
+require_once dirname(__DIR__) . '/app/catalog.php';
 
 $config = require dirname(__DIR__) . '/config/app.php';
 date_default_timezone_set($config['timezone']);
@@ -16,7 +17,7 @@ header('Cache-Control: no-store');
 
 start_secure_session();
 $page = $_GET['page'] ?? 'overview';
-if (!is_string($page) || !in_array($page, ['overview', 'components', 'account', 'caretakers', 'login', 'register', 'enroll'], true)) {
+if (!is_string($page) || !in_array($page, ['overview', 'components', 'account', 'caretakers', 'cemeteries', 'plots', 'services', 'families', 'login', 'register', 'enroll'], true)) {
     http_response_code(404);
     $errorTitle = 'Page not found';
     $errorMessage = 'The page you requested does not exist.';
@@ -39,6 +40,8 @@ try {
 $errors = [];
 $old = [];
 $authError = '';
+$catalogErrors = [];
+$catalogValues = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!valid_csrf()) {
@@ -91,6 +94,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ok = ctype_digit($subjectId) && review_caretaker((int) $subjectId, (int) $user['id'], $decision, $note);
         set_flash($ok ? 'Caretaker status updated.' : 'The review could not be completed. Check the status and required reason.', $ok ? 'success' : 'error');
         redirect_to('caretakers');
+    } elseif (in_array($action, ['save_cemetery', 'save_plot', 'save_service', 'change_caretaker_access'], true) && $user && $user['role'] === 'admin') {
+        if ($action === 'change_caretaker_access') {
+            $result = catalog_change_access(catalog_id(request_value('caretaker_id')), catalog_id(request_value('cemetery_id')), (int) $user['id'], request_value('decision'));
+            set_flash(isset($result['id']) ? 'Caretaker cemetery access updated.' : ($result['errors']['form'] ?? 'Access could not be updated.'), isset($result['id']) ? 'success' : 'error');
+            redirect_to('caretakers');
+        }
+        $page = match ($action) {
+            'save_cemetery' => 'cemeteries',
+            'save_plot' => 'plots',
+            default => 'services',
+        };
+        $fields = match ($action) {
+            'save_cemetery' => ['id', 'name', 'city', 'province', 'address', 'status'],
+            'save_plot' => ['id', 'cemetery_id', 'section_code', 'block_code', 'row_code', 'lot_code', 'landmark', 'status'],
+            default => ['id', 'cemetery_id', 'name', 'description', 'price', 'status'],
+        };
+        foreach ($fields as $field) $catalogValues[$field] = request_value($field);
+        $result = match ($action) {
+            'save_cemetery' => catalog_save_cemetery($catalogValues, (int) $user['id']),
+            'save_plot' => catalog_save_plot($catalogValues, (int) $user['id']),
+            default => catalog_save_service($catalogValues, (int) $user['id']),
+        };
+        if (isset($result['id'])) {
+            set_flash(match ($action) {
+                'save_cemetery' => 'Cemetery record saved.',
+                'save_plot' => 'Plot reference saved.',
+                default => 'Service offering saved. Its price is a pilot estimate.',
+            });
+            redirect_to($page);
+        }
+        $catalogErrors = $result['errors'];
     } else {
         http_response_code(403);
         $errorTitle = 'Action unavailable';
@@ -106,10 +140,10 @@ if (!$user) {
     exit;
 }
 if (in_array($page, ['login', 'register', 'enroll'], true)) redirect_to();
-if ($page === 'caretakers' && $user['role'] !== 'admin') {
+if (in_array($page, ['caretakers', 'cemeteries', 'plots', 'services', 'families'], true) && $user['role'] !== 'admin') {
     http_response_code(403);
     $errorTitle = 'Access denied';
-    $errorMessage = 'Only platform administrators can review caretaker applications.';
+    $errorMessage = 'Only platform administrators can manage pilot records.';
     require dirname(__DIR__) . '/app/views/error.php';
     exit;
 }
@@ -117,7 +151,35 @@ if ($page === 'caretakers' && $user['role'] !== 'admin') {
 $role = $user['role'];
 $roleLabels = ['admin' => 'Administrator', 'family' => 'Family member', 'caretaker' => 'Caretaker'];
 $flash = take_flash();
-if ($page === 'caretakers') $caretakers = list_caretakers();
+if ($page === 'caretakers') {
+    $caretakers = list_caretakers();
+    $cemeteries = catalog_cemeteries();
+    $caretakerAccess = catalog_caretaker_access();
+    $accessByCaretaker = [];
+    foreach ($caretakerAccess as $access) $accessByCaretaker[(int) $access['caretaker_id']][] = $access;
+}
+if (in_array($page, ['cemeteries', 'plots', 'services'], true)) {
+    $cemeteries = catalog_cemeteries();
+    $editId = catalog_id(isset($_GET['edit']) && is_string($_GET['edit']) ? $_GET['edit'] : '');
+    $editType = match ($page) { 'cemeteries' => 'cemetery', 'plots' => 'plot', default => 'service' };
+    $editRecord = $editId ? catalog_record($editType, $editId) : null;
+    if ($editId && !$editRecord && !$catalogValues) {
+        http_response_code(404);
+        $errorTitle = 'Record not found';
+        $errorMessage = 'The record you requested does not exist.';
+        require dirname(__DIR__) . '/app/views/error.php';
+        exit;
+    }
+    $filterCemeteryId = catalog_id(isset($_GET['cemetery_id']) && is_string($_GET['cemetery_id']) ? $_GET['cemetery_id'] : '');
+    $catalogSearch = isset($_GET['q']) && is_string($_GET['q']) ? mb_substr(trim($_GET['q']), 0, 80) : '';
+    if ($page === 'plots') $plots = catalog_plots($filterCemeteryId, $catalogSearch);
+    if ($page === 'services') $services = catalog_services($filterCemeteryId);
+    if ($page === 'services' && $editRecord) $priceHistory = catalog_service_history($editId);
+}
+if ($page === 'families') {
+    $catalogSearch = isset($_GET['q']) && is_string($_GET['q']) ? mb_substr(trim($_GET['q']), 0, 80) : '';
+    $families = catalog_families($catalogSearch);
+}
 if ($page === 'overview' && $role === 'admin') {
     $accountStats = ['families' => 0, 'pending' => 0, 'verified' => 0, 'total' => 0];
     foreach (db()->query('SELECT role, status, COUNT(*) AS total FROM users GROUP BY role, status')->fetchAll() as $group) {
@@ -127,6 +189,12 @@ if ($page === 'overview' && $role === 'admin') {
         if ($group['role'] === 'caretaker' && $group['status'] === 'pending') $accountStats['pending'] += $count;
         if ($group['role'] === 'caretaker' && $group['status'] === 'verified') $accountStats['verified'] += $count;
     }
+    $recentCatalogEvents = catalog_events(6);
+    $catalogStats = [
+        'cemeteries' => (int) db()->query("SELECT COUNT(*) FROM cemeteries WHERE status = 'active'")->fetchColumn(),
+        'plots' => (int) db()->query("SELECT COUNT(*) FROM plots p JOIN cemeteries c ON c.id = p.cemetery_id WHERE p.status = 'active' AND c.status = 'active'")->fetchColumn(),
+        'services' => (int) db()->query("SELECT COUNT(*) FROM service_offerings s JOIN cemeteries c ON c.id = s.cemetery_id WHERE s.status = 'active' AND c.status = 'active'")->fetchColumn(),
+    ];
 }
 if ($page === 'account' && $role === 'caretaker') {
     $statement = db()->prepare('SELECT service_area, experience, review_note, reviewed_at FROM caretaker_applications WHERE user_id = ?');
