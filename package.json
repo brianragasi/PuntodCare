@@ -1,0 +1,16 @@
+{
+  "name": "puntod-care",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i ./resources/css/app.css -o ./public/assets/app.css --minify",
+    "watch:css": "tailwindcss -i ./resources/css/app.css -o ./public/assets/app.css --watch",
+    "test:ui": "node ./tools/verify-ui.mjs"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.0",
+    "daisyui": "^5.0.0",
+    "playwright-core": "^1.63.0",
+    "tailwindcss": "^4.1.0"
+  }
+}
