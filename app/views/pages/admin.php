@@ -4,17 +4,17 @@
 </div>
 
 <section class="hero-card" aria-labelledby="hero-title">
-    <div class="hero-copy"><span class="hero-kicker"><span class="hero-kicker-dot"></span> A NEW KIND OF CEMETERY CARE</span><h2 id="hero-title">A little care.<br><em>A lasting connection.</em></h2><p>Bring families, caretakers, and resting places together in one caring space.</p><a href="<?= e(app_url('admin', 'components')) ?>" class="btn hero-button">Explore the interface <?= icon('arrow', 'size-4') ?></a></div>
+    <div class="hero-copy"><span class="hero-kicker"><span class="hero-kicker-dot"></span> A NEW KIND OF CEMETERY CARE</span><h2 id="hero-title">A little care.<br><em>A lasting connection.</em></h2><p>Bring families, caretakers, and resting places together in one caring space.</p><a href="?page=caretakers" class="btn hero-button">Review caretakers <?= icon('arrow', 'size-4') ?></a></div>
     <div class="hero-art" aria-hidden="true"><svg viewBox="0 0 360 290" fill="none"><circle cx="190" cy="145" r="128" stroke="currentColor" opacity=".14"/><circle cx="190" cy="145" r="95" stroke="currentColor" opacity=".13"/><path d="M70 234c55-8 96-32 126-78 24-37 26-75 57-99" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M164 192c-34-3-45-29-40-45 29 3 41 19 40 45ZM196 156c-1-39 22-54 43-54-2 32-14 49-43 54ZM228 113c-22-13-17-42-5-51 22 15 23 31 5 51ZM121 216c-29 8-44-13-46-28 25-4 41 5 46 28Z" fill="currentColor" opacity=".25"/><path d="M195 155c13 31 38 42 72 40" stroke="currentColor" stroke-width="2"/><path d="M235 188c6-23 30-29 43-23-5 22-20 29-43 23Z" fill="currentColor" opacity=".22"/><circle cx="267" cy="65" r="4" fill="currentColor" opacity=".45"/><circle cx="79" cy="106" r="3" fill="currentColor" opacity=".45"/></svg></div>
     <div class="hero-side-note">CARE, CONNECTED<br>FROM ANYWHERE.</div>
 </section>
 
-<section class="section-block" aria-labelledby="snapshot-title"><div class="section-header"><div><p class="eyebrow">AT A GLANCE</p><h2 id="snapshot-title">Pilot snapshot</h2></div><span class="section-note">Illustrative sample data</span></div>
+<section class="section-block" aria-labelledby="snapshot-title"><div class="section-header"><div><p class="eyebrow">AT A GLANCE</p><h2 id="snapshot-title">Account snapshot</h2></div><span class="section-note">Live account data</span></div>
     <div class="stat-grid">
-        <article class="stat-card"><span class="stat-icon stat-green"><?= icon('pin') ?></span><p>Partner cemetery</p><strong>01</strong><span class="stat-foot">Initial pilot location</span></article>
-        <article class="stat-card"><span class="stat-icon stat-gold"><?= icon('heart') ?></span><p>Family graves</p><strong>24</strong><span class="stat-foot">Registered in sample view</span></article>
-        <article class="stat-card"><span class="stat-icon stat-blue"><?= icon('users') ?></span><p>Care providers</p><strong>08</strong><span class="stat-foot">Awaiting Phase 3 management</span></article>
-        <article class="stat-card"><span class="stat-icon stat-rose"><?= icon('document') ?></span><p>Care requests</p><strong>12</strong><span class="stat-foot">Across sample statuses</span></article>
+        <article class="stat-card"><span class="stat-icon stat-green"><?= icon('heart') ?></span><p>Family accounts</p><strong><?= $accountStats['families'] ?></strong><span class="stat-foot">Registered families</span></article>
+        <article class="stat-card"><span class="stat-icon stat-gold"><?= icon('clock') ?></span><p>Pending caretakers</p><strong><?= $accountStats['pending'] ?></strong><span class="stat-foot">Need administrator review</span></article>
+        <article class="stat-card"><span class="stat-icon stat-blue"><?= icon('shield') ?></span><p>Verified caretakers</p><strong><?= $accountStats['verified'] ?></strong><span class="stat-foot">Eligible for later assignments</span></article>
+        <article class="stat-card"><span class="stat-icon stat-rose"><?= icon('users') ?></span><p>Total accounts</p><strong><?= $accountStats['total'] ?></strong><span class="stat-foot">All registered roles</span></article>
     </div>
 </section>
 

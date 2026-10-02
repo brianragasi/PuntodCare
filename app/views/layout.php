@@ -2,10 +2,16 @@
 declare(strict_types=1);
 
 $isComponents = $page === 'components';
-$pageTitle = $isComponents ? 'Interface kit' : match ($role) {
+$overviewTitle = match ($role) {
     'family' => 'Family overview',
     'caretaker' => 'Your work',
     default => 'Overview',
+};
+$pageTitle = match ($page) {
+    'components' => 'Interface kit',
+    'account' => 'My account',
+    'caretakers' => 'Caretaker review',
+    default => $overviewTitle,
 };
 ?>
 <!doctype html>
@@ -36,17 +42,19 @@ $pageTitle = $isComponents ? 'Interface kit' : match ($role) {
         <div class="sidebar-scroll">
             <div class="workspace-label">WORKSPACE <span class="workspace-dot"></span> PILOT</div>
             <div class="workspace-card">
-                <span class="workspace-avatar"><?= e(strtoupper(substr($role, 0, 1))) ?></span>
-                <span><strong><?= e($roleLabels[$role]) ?></strong><small>Sample workspace</small></span>
+                <span class="workspace-avatar"><?= e(strtoupper(substr($user['full_name'], 0, 1))) ?></span>
+                <span><strong><?= e($user['full_name']) ?></strong><small><?= e($roleLabels[$role]) ?></small></span>
             </div>
 
             <nav aria-label="Primary" class="sidebar-nav">
                 <p class="nav-caption">YOUR SPACE</p>
-                <a href="<?= e(app_url($role)) ?>" class="nav-link<?= $isComponents ? '' : ' is-active' ?>" <?= $isComponents ? '' : 'aria-current="page"' ?>><?= icon('grid') ?><span><?= e($pageTitle === 'Interface kit' ? ($role === 'admin' ? 'Overview' : ($role === 'family' ? 'Family overview' : 'Your work')) : $pageTitle) ?></span></a>
+                <a href="<?= e(app_url($role)) ?>" class="nav-link<?= $page === 'overview' ? ' is-active' : '' ?>" <?= $page === 'overview' ? 'aria-current="page"' : '' ?>><?= icon('grid') ?><span><?= e($overviewTitle) ?></span></a>
+                <?php if ($role === 'admin'): ?><a href="?page=caretakers" class="nav-link<?= $page === 'caretakers' ? ' is-active' : '' ?>" <?= $page === 'caretakers' ? 'aria-current="page"' : '' ?>><?= icon('shield') ?><span>Caretaker review</span></a><?php endif; ?>
+                <a href="?page=account" class="nav-link<?= $page === 'account' ? ' is-active' : '' ?>" <?= $page === 'account' ? 'aria-current="page"' : '' ?>><?= icon('users') ?><span>My account</span></a>
                 <a href="<?= e(app_url($role, 'components')) ?>" class="nav-link<?= $isComponents ? ' is-active' : '' ?>" <?= $isComponents ? 'aria-current="page"' : '' ?>><?= icon('sparkle') ?><span>Interface kit</span></a>
                 <p class="nav-caption nav-caption-spaced">COMING IN LATER PHASES</p>
                 <?php if ($role === 'admin'): ?>
-                    <span class="nav-link nav-pending"><?= icon('users') ?><span>People & providers</span><small>Later</small></span>
+                    <span class="nav-link nav-pending"><?= icon('pin') ?><span>Cemetery records</span><small>Later</small></span>
                     <span class="nav-link nav-pending"><?= icon('document') ?><span>Service requests</span><small>Later</small></span>
                 <?php elseif ($role === 'family'): ?>
                     <span class="nav-link nav-pending"><?= icon('heart') ?><span>My graves</span><small>Later</small></span>
@@ -56,6 +64,8 @@ $pageTitle = $isComponents ? 'Interface kit' : match ($role) {
                     <span class="nav-link nav-pending"><?= icon('camera') ?><span>Photo reports</span><small>Later</small></span>
                 <?php endif; ?>
             </nav>
+
+            <form action="?page=overview" method="post" class="logout-form"><?= csrf_field() ?><input type="hidden" name="action" value="logout"><button type="submit" class="nav-link logout-button"><?= icon('arrow') ?><span>Sign out</span></button></form>
 
             <div class="sidebar-note">
                 <div class="sidebar-note-icon"><?= icon('heart', 'size-4') ?></div>
@@ -75,20 +85,20 @@ $pageTitle = $isComponents ? 'Interface kit' : match ($role) {
                 <span class="breadcrumb-current"><?= e($pageTitle) ?></span>
             </div>
             <div class="topbar-right">
-                <label for="role-preview" class="role-label">View as</label>
-                <select id="role-preview" class="select select-sm role-select" aria-label="Preview workspace as" data-role-select>
-                    <?php foreach ($roleLabels as $roleValue => $label): ?>
-                    <option value="<?= e($roleValue) ?>" <?= $role === $roleValue ? 'selected' : '' ?>><?= e($label) ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <span class="role-chip"><?= e($roleLabels[$role]) ?></span>
                 <span class="topbar-divider"></span>
-                <span class="topbar-avatar" aria-hidden="true"><?= e(strtoupper(substr($role, 0, 1))) ?></span>
+                <span class="topbar-avatar" aria-hidden="true"><?= e(strtoupper(substr($user['full_name'], 0, 1))) ?></span>
             </div>
         </header>
 
         <main id="main-content" class="page-content" tabindex="-1">
-            <div class="preview-banner" role="note"><?= icon('sparkle', 'size-4') ?><strong>Phase 1 preview</strong><span>Sample content shows the interface. Accounts and live records come in the next phases.</span></div>
-            <?php if ($isComponents): ?>
+            <?php if ($flash): ?><div class="alert account-flash <?= $flash['type'] === 'error' ? 'account-flash-error' : '' ?>" role="status"><?= icon($flash['type'] === 'error' ? 'close' : 'check', 'size-5') ?><span><?= e($flash['message']) ?></span></div><?php endif; ?>
+            <?php if (in_array($page, ['overview', 'components'], true)): ?><div class="preview-banner" role="note"><?= icon('sparkle', 'size-4') ?><strong>Workspace preview</strong><span>Your account is real. Graves, requests, and dashboard figures are examples until later phases.</span></div><?php endif; ?>
+            <?php if ($page === 'caretakers'): ?>
+                <?php require __DIR__ . '/pages/caretakers.php'; ?>
+            <?php elseif ($page === 'account'): ?>
+                <?php require __DIR__ . '/pages/account.php'; ?>
+            <?php elseif ($isComponents): ?>
                 <?php require __DIR__ . '/pages/components.php'; ?>
             <?php else: ?>
                 <?php require __DIR__ . '/pages/' . $role . '.php'; ?>

@@ -31,13 +31,13 @@
     if (event.matches && sidebar?.classList.contains('is-open')) setSidebar(false);
   });
 
-  document.querySelector('[data-role-select]')?.addEventListener('change', (event) => {
-    const role = event.target.value;
-    if (['admin', 'family', 'caretaker'].includes(role)) {
-      const url = new URL(window.location.href);
-      url.searchParams.set('role', role);
-      window.location.assign(url.toString());
-    }
+  document.querySelectorAll('.review-form').forEach((form) => {
+    const note = form.querySelector('textarea[name="note"]');
+    form.addEventListener('submit', (event) => {
+      const decision = event.submitter?.value;
+      note.required = decision === 'reject' || decision === 'suspend';
+      if (!form.reportValidity()) event.preventDefault();
+    });
   });
 
   const toast = document.getElementById('preview-toast');

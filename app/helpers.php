@@ -8,7 +8,9 @@ function e(string $value): string
 
 function app_url(string $role, string $page = 'overview'): string
 {
-    return '?role=' . rawurlencode($role) . '&page=' . rawurlencode($page);
+    // The role parameter remains for Phase 1 view compatibility. The server
+    // derives the active role from the signed-in account, never from a URL.
+    return '?page=' . rawurlencode($page);
 }
 
 function icon(string $name, string $class = 'size-5'): string

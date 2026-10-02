@@ -12,7 +12,7 @@ Build a mobile-friendly pilot for one partner cemetery. A family registers a gra
 
 The phases below define dependencies, not fixed delivery dates. Complete and verify one feature at a time, then explain it before moving on.
 
-**Current progress (October 2, 2026): Phase 1 complete.** The shared theme, PHP structure, three responsive role previews, and interface kit are implemented. All displayed records are examples. The next phase is accounts, login, and server-side permissions.
+**Current progress (October 2, 2026): Phases 1 and 2 complete.** The shared design, database-backed family and caretaker accounts, login/logout, server-side permissions, caretaker review, and controlled administrator setup are implemented. The administrator's account counts are live. Grave profiles and service requests are still labeled examples. Phase 3 is the basic administrator panel for cemetery records and service offerings.
 
 ## 1. Foundation and shared design
 

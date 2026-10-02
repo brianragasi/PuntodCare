@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-// No secrets live in this file. Phase 2 will add local database configuration.
+// Shared settings only. Database credentials live in ignored config/local.php.
 return [
     'name' => 'Puntod Care',
     'timezone' => 'Asia/Manila',
