@@ -1,37 +1,34 @@
 # Deploy Puntod Care on GoogieHost
 
-GoogieHost provides PHP 8.x, MySQL/phpMyAdmin, SSL, and a DirectAdmin panel. The application needs all four. Code pushed to GitHub does **not** update the database or the uploaded photos. Automatic code deployment requires an active Git integration and push webhook; check that your GoogieHost plan exposes DirectAdmin **Advanced Features → Git** before relying on it. See [GoogieHost PHP hosting](https://googiehost.com/freephphosting) and [DirectAdmin Git Manager](https://docs.directadmin.com/other-hosting-services/git/).
+The GoogieHost account for `puntodcare.whf.bz` has PHP 8.3 and the `kcsmdehy_puntod_care` database. The phpMyAdmin screenshot already shows all 17 application tables and existing rows. **Do not import the schema or a local database backup again into this database.** Check the existing `users` rows before sharing the public URL; any copied demo accounts should have their passwords changed or be removed.
 
-## 1. Connect the repository
+## 1. Build the files on your computer
 
-In GoogieHost DirectAdmin, open **Advanced Features → Git** if available. Add remote `https://github.com/brianragasi/PuntodCare.git`, select branch `main`, and set the deploy directory to the domain's **existing** `domains/YOUR-DOMAIN/public_html` directory (relative to your hosting home). Deploy once. The result must place `index.php`, `app/`, `config/`, `database/`, and `public/` directly inside `public_html`, not inside a second `PuntodCare` folder. The site's root URL then redirects to `/public/`.
+From the project directory, run `php tools/build-hosting-files.php`. It creates two ignored files in `storage/`:
 
-If GoogieHost left a default `index.html` page in `public_html`, remove that placeholder after confirming the repository files deployed; otherwise it may appear instead of Puntod Care's `index.php`.
+- `PuntodCare-GoogieHost.zip` contains only tracked application files needed by the website. It has no local database config, database password, or photos.
+- `puntodcare-install.sql` combines the numbered migrations for a **new empty database**. The current GoogieHost database already has tables, so do not import this file now.
 
-If DirectAdmin shows a webhook URL for this repository, copy that exact URL. In GitHub, open this repository's **Settings → Webhooks → Add webhook**, paste the URL, use the content type and secret required by DirectAdmin, and select the **push** event. Keep SSL verification enabled. Check the GitHub webhook delivery and DirectAdmin deploy log after a test push. [DirectAdmin documents](https://docs.directadmin.com/other-hosting-services/git/) that automated fetch and deploy require a valid deploy branch and directory. [GitHub's webhook guide](https://docs.github.com/en/webhooks/using-webhooks/creating-webhooks) explains the Settings screen.
+The compiled CSS is included in the ZIP. GoogieHost does not need Node.js or npm.
 
-The compiled CSS is already in the repository, so the host does not need Node or npm. Once the webhook works, reviewed pushes to `main` update application code on the live site.
+## 2. Upload the website
 
-If **Git** or a webhook is unavailable on your GoogieHost plan, this automatic path is not configured. You can deploy manually with the File Manager/FTP for now; ask GoogieHost whether Git Manager is enabled before expecting `main` pushes to appear automatically. Do not add a public PHP endpoint that accepts unauthenticated deployment requests.
+In DirectAdmin **File Manager**, open `domains/puntodcare.whf.bz/public_html`. Upload `storage/PuntodCare-GoogieHost.zip` there and extract it **in that directory**. `index.php`, `.htaccess`, `app/`, `config/`, and `public/` must be directly inside `public_html`, without a second `PuntodCare` folder. Remove the default `index.html` placeholder if it takes precedence over Puntod Care's `index.php`. Delete the uploaded ZIP after extraction.
 
-## 2. Keep private data outside Git deployment
+The dashboard screenshot did not show Git Manager. Until a Git deployment integration or another secure deployment method is configured and tested, **pushing to GitHub does not update GoogieHost**. For each code update, rebuild the ZIP and replace the application files in `public_html`. Keep the private directory in step 3 untouched.
 
-In DirectAdmin File Manager, create `domains/YOUR-DOMAIN/puntodcare-private` next to `public_html`, **not inside it**. The app automatically uses this directory when it exists. Create `local.php` there using [config/local.example.php](config/local.example.php) as the template. Enter the **GoogieHost database host, database name, database user, password, and port** shown by DirectAdmin; these may include your hosting account prefix. Do not commit, paste into GitHub, or upload this file into `public_html`.
+## 3. Add the live database configuration
 
-The app will create `puntodcare-private/grave-photos/` and `puntodcare-private/request-evidence/` when photos are uploaded, provided PHP can write to `puntodcare-private`. These files persist outside Git deployments. Do not copy local `storage/` contents or demo credentials to the live site. On XAMPP, where this sibling directory does not exist, the app keeps using the existing ignored `config/local.php` and `storage/` paths.
+In File Manager, create `domains/puntodcare.whf.bz/puntodcare-private` beside `public_html`, then create `local.php` inside it. Copy the structure from [config/local.example.php](config/local.example.php). Set `host` to `localhost`, `port` to `3306`, and both `name` and `username` to the database values displayed by DirectAdmin. Enter the password directly in this private file; **never put it in GitHub, the ZIP, or `public_html`**. The application automatically reads this sibling directory when it exists.
 
-## 3. Create the hosted database and first administrator
+Make sure PHP can write to `puntodcare-private`. The app stores grave and request photos in that directory. Your XAMPP installation continues to use its own ignored `config/local.php` and `storage/`.
 
-In DirectAdmin **MySQL Management**, create a database and user. Open phpMyAdmin, select **that database**, and import `database/001_accounts.sql` through `database/005_evidence_updates.sql` in number order. If GoogieHost provides a PHP command line, `php tools/migrate.php` is an alternative after `local.php` is in place. It uses an existing database without requiring permission to create a new one.
+## 4. Check the live site
 
-On your **own computer**, run `php tools/prepare-live-admin.php "Your Name" you@example.com`. The script generates a random password and two ignored local files: `storage/live-admin-import.sql` and `storage/live-admin-credentials.json`. Import only the SQL file into the selected GoogieHost database in phpMyAdmin. Keep the credentials file private and delete the SQL file after the import. Do not upload either file to the website. Sign in with those credentials, then create family and caretaker accounts through the website as needed. Do not put the local demo database or demo admin account on a public site.
+Enable SSL and visit `https://puntodcare.whf.bz/`. Verify the login page loads with styles, sign in with an account that exists in the hosted `users` table, and test a request with a non-sensitive photo. Check that `pdo_mysql`, `mbstring`, and `fileinfo` are enabled and that the PHP upload limit permits at least a 5 MB photo.
 
-## 4. Check the live site before sharing
+Confirm `https://puntodcare.whf.bz/config/app.php` and `https://puntodcare.whf.bz/app/database.php` are denied. The private `local.php` must be outside `public_html`. If a private file is reachable, fix the web root and access rules before sharing the URL.
 
-- Enable SSL and open `https://YOUR-DOMAIN/`. The login page should load with its styles at `/public/?page=login`.
-- Select PHP 8.1 or newer and check `pdo_mysql`, `mbstring`, and `fileinfo` are enabled. Set `upload_max_filesize` to at least 5 MB and `post_max_size` above that (for example 8 MB) for care photos. If the app displays a setup/database error, recheck `puntodcare-private/local.php` and the imported tables.
-- Confirm `https://YOUR-DOMAIN/database/001_accounts.sql` and `https://YOUR-DOMAIN/config/local.example.php` are denied, and `https://YOUR-DOMAIN/puntodcare-private/local.php` is not reachable. If any private file downloads, stop sharing the URL until the web root and access rules are corrected.
-- Sign in as the administrator; create one fictional cemetery/service, register a family and caretaker, and test a request with a small non-sensitive photo. Verify the photo remains after the next code deployment.
-- Check the GitHub webhook's delivery result and DirectAdmin's deployment log after a harmless code push. A successful GitHub push is not proof that the live site updated.
+If the hosted `users` table does not contain an administrator you want to keep, run `php tools/prepare-live-admin.php "Your Name" you@example.com` **on your computer**. Import only its generated `storage/live-admin-import.sql` into the selected hosted database, and keep `storage/live-admin-credentials.json` private. Do not upload those files to `public_html`.
 
-The live site allows public family registration. If only teammates should access this preview, put the site behind DirectAdmin's password-protected directory feature or another host-level access gate before sharing the URL. Keep demo photos fictional and back up the database **and** `puntodcare-private/` together. Every future schema file must still be imported or migrated on the server; Git deployment updates code only.
+Back up both the hosted database and `puntodcare-private` regularly. When you rotate the database password in DirectAdmin, update the private `local.php` to match. A future migration needs its own database import; uploading new code does not change the schema.
