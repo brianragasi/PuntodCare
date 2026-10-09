@@ -8,7 +8,8 @@
     "test:ui": "node ./tools/verify-ui.mjs",
     "test:admin": "node ./tools/verify-admin.mjs",
     "test:graves": "node ./tools/verify-graves.mjs",
-    "test:requests": "node ./tools/verify-requests.mjs"
+    "test:requests": "node ./tools/verify-requests.mjs",
+    "test:pilot": "node ./tools/verify-pilot.mjs"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.0",

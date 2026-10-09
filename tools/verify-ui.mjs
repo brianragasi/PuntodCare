@@ -1,14 +1,12 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { chromium } from 'playwright-core';
+import { testAdmin } from './test-admin.mjs';
 
 const baseUrl = process.env.PUNTOD_BASE_URL || 'http://127.0.0.1/PuntodCare/public/';
 const chromePath = process.env.PUNTOD_CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-const savedAdmin = JSON.parse(readFileSync(path.resolve('storage/admin-credentials.json'), 'utf8'));
-const adminEmail = process.env.PUNTOD_ADMIN_EMAIL || savedAdmin.email;
-const adminPassword = process.env.PUNTOD_ADMIN_PASSWORD || savedAdmin.password;
+const { email: adminEmail, password: adminPassword } = testAdmin();
 const unique = Date.now().toString(36);
 const familyEmail = `family-${unique}@example.test`;
 const caretakerEmail = `caretaker-${unique}@example.test`;
@@ -61,7 +59,7 @@ try {
   assert.equal(securityHeaders['x-frame-options'], 'DENY');
   assert.equal(securityHeaders['x-content-type-options'], 'nosniff');
   assert.equal(securityHeaders['referrer-policy'], 'strict-origin-when-cross-origin');
-  for (const privatePath of ['config/local.php', 'storage/admin-credentials.json', '.git/config']) {
+  for (const privatePath of ['config/local.php', 'storage/admin-credentials.json', 'storage/demo-credentials.json', '.git/config']) {
     const response = await guest.page.request.get(new URL(`../${privatePath}`, baseUrl).href);
     assert.equal(response.status(), 403, `${privatePath} must be private`);
   }

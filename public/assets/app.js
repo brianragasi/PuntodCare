@@ -59,6 +59,40 @@
     });
   });
 
+  document.addEventListener('submit', (event) => {
+    const submittedForm = event.target;
+    if (!(submittedForm instanceof HTMLFormElement) || submittedForm.method.toLowerCase() !== 'post' || event.defaultPrevented) return;
+    if (submittedForm.dataset.submitting === 'true') {
+      event.preventDefault();
+      return;
+    }
+    submittedForm.dataset.submitting = 'true';
+    const button = event.submitter || submittedForm.querySelector('button[type="submit"]');
+    if (!(button instanceof HTMLButtonElement)) return;
+    const original = button.innerHTML;
+    button.setAttribute('aria-busy', 'true');
+    button.classList.add('is-submitting');
+    button.textContent = 'Submitting…';
+    const status = document.createElement('span');
+    status.className = 'submit-feedback';
+    status.setAttribute('role', 'status');
+    status.textContent = 'Submitting…';
+    button.insertAdjacentElement('afterend', status);
+    const reset = () => {
+      delete submittedForm.dataset.submitting;
+      button.innerHTML = original;
+      button.removeAttribute('aria-busy');
+      button.classList.remove('is-submitting');
+      status.textContent = 'No confirmation yet. Check the page before trying again.';
+    };
+    const onPageShow = (pageEvent) => { if (pageEvent.persisted) reset(); };
+    window.addEventListener('pageshow', onPageShow);
+    window.setTimeout(() => {
+      window.removeEventListener('pageshow', onPageShow);
+      if (submittedForm.isConnected && submittedForm.dataset.submitting === 'true') reset();
+    }, 15000);
+  });
+
   const locationButton = document.querySelector('[data-grave-location]');
   locationButton?.addEventListener('click', () => {
     const feedback = document.querySelector('[data-grave-location-feedback]');

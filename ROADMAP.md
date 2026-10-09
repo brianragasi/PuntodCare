@@ -12,7 +12,7 @@ Build a mobile-friendly pilot for one partner cemetery. A family registers a gra
 
 The phases below define dependencies, not fixed delivery dates. Complete and verify one feature at a time, then explain it before moving on.
 
-**Current progress (October 9, 2026): Phases 1–6 complete.** Accounts, caretaker review, the administrator catalog, private family grave profiles, service requests, before-and-after evidence, family review, issue handling, and in-app updates are implemented. Scheduled inspections, automated condition reports, and payments remain for later phases.
+**Current progress (October 9, 2026): Phases 1–7 complete.** The core workflow has fictional demo accounts and sample requests, repeatable browser checks, a mobile review check, a pilot report, and setup, backup, and demonstration instructions. Scheduled inspections, automated condition reports, and payments remain for later phases.
 
 ## 1. Foundation and shared design
 

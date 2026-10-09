@@ -575,3 +575,5 @@ h1, h2, h3, p { text-wrap: pretty; }
 .evidence-progress span { padding: 5px 9px; color: #356144; background: #eaf3e8; border-radius: 99px; font-size: 10px; font-weight: 700; }
 .evidence-progress a { color: #2e6648; font-size: 11px; text-decoration: underline; }
 @media (max-width: 760px) { .evidence-compare, .evidence-upload-grid { grid-template-columns: 1fr; } .update-card { grid-template-columns: auto minmax(0, 1fr); } .update-card form { grid-column: 2; } }
+.btn.is-submitting { cursor: progress; opacity: .72; }
+.submit-feedback { display: inline-block; align-self: center; color: #52705c; font-size: 11px; line-height: 1.4; }

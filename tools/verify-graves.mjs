@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { chromium } from 'playwright-core';
+import { testAdmin } from './test-admin.mjs';
 
 const baseUrl = process.env.PUNTOD_BASE_URL || 'http://127.0.0.1/PuntodCare/public/';
 const chromePath = process.env.PUNTOD_CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-const admin = JSON.parse(readFileSync(path.resolve('storage/admin-credentials.json'), 'utf8'));
+const admin = testAdmin();
 const suffix = Date.now().toString(36);
 const cemeteryName = `Puntod Test ${suffix}`;
 const ownerEmail = `grave-owner-${suffix}@example.test`;

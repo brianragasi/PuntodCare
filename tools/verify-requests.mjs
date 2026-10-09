@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { chromium } from 'playwright-core';
+import { testAdmin } from './test-admin.mjs';
 
 const baseUrl = process.env.PUNTOD_BASE_URL || 'http://127.0.0.1/PuntodCare/public/';
 const chromePath = process.env.PUNTOD_CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-const adminAccount = JSON.parse(readFileSync(path.resolve('storage/admin-credentials.json'), 'utf8'));
+const adminAccount = testAdmin();
 const suffix = Date.now().toString(36);
 const cemeteryName = `Puntod Test ${suffix}`;
 const familyEmail = `request-family-${suffix}@example.test`;
@@ -107,6 +107,27 @@ try {
   await family.page.getByRole('button', { name: /submit care request/i }).click();
   assert.match(await family.page.locator('.field-error').allTextContents().then((parts) => parts.join(' ')), /Review the pilot estimate/);
   await family.page.locator('input[name="price_ack"]').check();
+  const submissionFeedback = await family.page.evaluate(() => {
+    const demoForm = document.createElement('form');
+    demoForm.method = 'post';
+    const demoButton = document.createElement('button');
+    demoButton.type = 'submit';
+    demoButton.textContent = 'Save';
+    demoForm.append(demoButton);
+    document.body.append(demoForm);
+    let seenSubmissions = 0;
+    let repeatedBlocked = false;
+    const stopNavigation = (event) => { seenSubmissions += 1; if (seenSubmissions === 2) repeatedBlocked = event.defaultPrevented; event.preventDefault(); };
+    window.addEventListener('submit', stopNavigation);
+    demoForm.dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true, submitter: demoButton }));
+    const repeated = new SubmitEvent('submit', { bubbles: true, cancelable: true, submitter: demoButton });
+    demoForm.dispatchEvent(repeated);
+    const result = { busy: demoButton.getAttribute('aria-busy'), feedback: demoForm.querySelector('.submit-feedback')?.textContent, repeatedBlocked };
+    window.removeEventListener('submit', stopNavigation);
+    demoForm.remove();
+    return result;
+  });
+  assert.deepEqual(submissionFeedback, { busy: 'true', feedback: 'Submitting…', repeatedBlocked: true });
   await family.page.getByRole('button', { name: /submit care request/i }).click();
   await family.page.waitForURL(/page=request&id=/);
   const requestId = new URL(family.page.url()).searchParams.get('id');
@@ -126,7 +147,7 @@ try {
   assert.equal((await caretaker.page.goto(`${baseUrl}?page=request&id=${requestId}`))?.status(), 404);
 
   await admin.page.goto(`${baseUrl}?page=services`);
-  await admin.page.locator('.admin-record').filter({ hasText: 'Pilot grave cleaning' }).getByRole('link', { name: /edit offering/i }).click();
+  await admin.page.locator('.admin-record').filter({ hasText: 'Pilot grave cleaning' }).filter({ hasText: cemeteryName }).getByRole('link', { name: /edit offering/i }).click();
   await admin.page.locator('#service-price').fill('650.00');
   await admin.page.getByRole('button', { name: /save changes/i }).click();
   await admin.page.waitForURL(/page=services/);
@@ -233,7 +254,17 @@ try {
   assert.match(await family.page.locator('.request-status-banner').textContent(), /Awaiting family review/);
   assert.match(await family.page.locator('.request-timeline').textContent(), /Cleaned and tidied/);
   assert.equal(await family.page.locator('.evidence-photo img').count(), 2);
+  await family.page.locator('.evidence-photo img').first().scrollIntoViewIfNeeded();
+  await family.page.waitForFunction(() => { const image = document.querySelector('.evidence-photo img'); return image?.complete && image.naturalWidth > 0; });
   assert.equal(await family.page.locator('.evidence-photo img').first().evaluate((image) => image.complete && image.naturalWidth > 0), true);
+  for (const width of [320, 390, 768, 1280]) {
+    await family.page.setViewportSize({ width, height: 900 });
+    assert.equal(await family.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, `review overflows at ${width}px`);
+    assert.equal(await family.page.getByRole('button', { name: 'Approve reported work' }).isVisible(), true);
+  }
+  await family.page.setViewportSize({ width: 390, height: 900 });
+  await family.page.waitForTimeout(300);
+  assert.equal(await family.page.locator('#site-sidebar').evaluate((sidebar) => sidebar.getBoundingClientRect().right <= 0), true);
   await family.page.screenshot({ path: path.resolve('storage/evidence-family-mobile.png'), fullPage: true });
   await family.page.goto(`${baseUrl}?page=updates`);
   assert.match(await family.page.locator('.update-list').textContent(), /before-and-after evidence/i);
@@ -308,6 +339,8 @@ try {
   await admin.page.goto(`${baseUrl}?page=updates`);
   assert.match(await admin.page.locator('.update-list').textContent(), /needs review/);
   await admin.page.goto(`${baseUrl}?page=request&id=${issueId}`);
+  await admin.page.setViewportSize({ width: 390, height: 900 });
+  assert.equal(await admin.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, 'admin issue review overflows on phone');
   await admin.page.locator('#resolution-note').fill('I reviewed the images and asked the caretaker to check the grass.');
   await admin.page.getByRole('button', { name: 'Send response for family review' }).click();
   await admin.page.waitForURL(/page=request&id=/);

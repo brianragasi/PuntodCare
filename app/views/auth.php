@@ -33,4 +33,5 @@ $intro = $isLogin ? 'Sign in to your Puntod Care account.' : ($isCaretaker ? 'Ap
         <div class="auth-links"><?php if ($isLogin): ?><p>New to Puntod Care? <a href="?page=register">Create a family account</a></p><p>Want to offer care? <a href="?page=enroll">Apply as a caretaker</a></p><?php else: ?><p>Already have an account? <a href="?page=login">Sign in</a></p><?php if (!$isCaretaker): ?><p>Are you a caretaker? <a href="?page=enroll">Apply here</a></p><?php endif; ?><?php endif; ?></div>
     </div></main>
 </div>
+<script src="assets/app.js" defer></script>
 </body></html>
