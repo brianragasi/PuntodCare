@@ -12,7 +12,7 @@ Build a mobile-friendly pilot for one partner cemetery. A family registers a gra
 
 The phases below define dependencies, not fixed delivery dates. Complete and verify one feature at a time, then explain it before moving on.
 
-**Current progress (October 9, 2026): Phases 1–5 complete.** Accounts, caretaker review, the administrator catalog, private family grave profiles, and service requests with assignment and status history are implemented. The current pilot uses a caretaker work note for family review. Photo evidence, inspections, condition reports, issue resolution, and payments remain for later phases.
+**Current progress (October 9, 2026): Phases 1–6 complete.** Accounts, caretaker review, the administrator catalog, private family grave profiles, service requests, before-and-after evidence, family review, issue handling, and in-app updates are implemented. Scheduled inspections, automated condition reports, and payments remain for later phases.
 
 ## 1. Foundation and shared design
 
@@ -122,7 +122,7 @@ Coordinate the work and make its progress understandable to all three roles.
 - The server enforces valid status transitions and records who changed the status and when.
 - The request stores the agreed service and price so later catalog edits do not change the original request.
 
-Phase 5 permits a caretaker work note to enter family review. Phase 6 will add before-and-after evidence requirements before that transition; completed status currently records family approval of the note, not independent proof of work or payment.
+The caretaker must upload before-and-after photos for the current work round and add a completion note before family review. Completed status records family approval of the report, not independent proof of work or payment. Older requests submitted before Phase 6 can still be reviewed with their work note.
 
 ## 6. Photo evidence, family review, and issue handling
 

@@ -1,6 +1,6 @@
 # Puntod Care
 
-Puntod Care is a mobile-friendly pilot for families, cemetery caretakers, and administrators. Families register graves and request care, administrators assign verified caretakers, and caretakers confirm the grave and record job progress. Requests keep the selected service and pilot price. Photo evidence, condition reports, and payments are not implemented yet.
+Puntod Care is a mobile-friendly pilot for families, cemetery caretakers, and administrators. Families register graves and request care, administrators assign verified caretakers, and caretakers confirm the grave and upload before-and-after photos. Families review the work or report an issue. Requests keep the selected service and pilot price. Automated condition reports and payments are not implemented yet.
 
 The app uses vanilla PHP and JavaScript, MySQL/MariaDB, Tailwind CSS, and daisyUI. Node.js is only needed when rebuilding the CSS.
 

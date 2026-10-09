@@ -55,7 +55,7 @@
 
   document.querySelectorAll('[data-confirm-remove]').forEach((form) => {
     form.addEventListener('submit', (event) => {
-      if (!window.confirm('Remove this reference photo?')) event.preventDefault();
+      if (!window.confirm(form.dataset.confirmRemove || 'Remove this reference photo?')) event.preventDefault();
     });
   });
 

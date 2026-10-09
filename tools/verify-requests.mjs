@@ -40,6 +40,14 @@ async function csrfPost(page, form) {
   return page.request.post(`${baseUrl}?page=request`, { form: { csrf_token: csrf, ...form } });
 }
 
+async function evidencePost(page, requestId, stage, file = png) {
+  const csrf = await page.locator('input[name="csrf_token"]').first().getAttribute('value');
+  return page.request.post(`${baseUrl}?page=request&id=${requestId}`, { multipart: {
+    csrf_token: csrf, action: 'upload_request_evidence', request_id: requestId, stage,
+    caption: `${stage} photo from test`, photo: { name: `${stage}.png`, mimeType: 'image/png', buffer: file },
+  } });
+}
+
 try {
   const admin = await makePage();
   await admin.page.goto(`${baseUrl}?page=login`);
@@ -155,6 +163,12 @@ try {
   await admin.page.goto(`${baseUrl}?page=request&id=${requestId}`);
   const duplicate = await csrfPost(admin.page, { action: 'request_transition', decision: 'assign', request_id: requestId, caretaker_id: caretakerId });
   assert.match(await duplicate.text(), /not available for the request/);
+  await caretaker.page.goto(`${baseUrl}?page=updates`);
+  assert.match(await caretaker.page.locator('.update-list').textContent(), /new care assignment/i);
+  await caretaker.page.locator('.update-card').filter({ hasText: `#${requestId}` }).getByRole('button', { name: /open request/i }).click();
+  await caretaker.page.waitForURL(new RegExp(`page=request&id=${requestId}`));
+  await caretaker.page.goto(`${baseUrl}?page=updates`);
+  assert.equal(await caretaker.page.locator('.update-card').filter({ hasText: `#${requestId}` }).filter({ has: caretaker.page.locator('.is-unread') }).count(), 0);
   await caretaker.page.goto(`${baseUrl}?page=request&id=${requestId}`);
   assert.equal((await caretaker.page.goto(`${baseUrl}?page=request&id=${requestId}`))?.status(), 200);
   assert.equal((await caretaker.page.request.get(photoUrl)).status(), 200);
@@ -176,16 +190,59 @@ try {
   await caretaker.page.getByRole('button', { name: /confirm grave and start/i }).click();
   await caretaker.page.waitForURL(/page=request&id=/);
   assert.match(await caretaker.page.locator('.request-status-banner').textContent(), /In progress/);
-  await caretaker.page.locator('#work-note').fill('Cleaned and tidied the grave area.');
-  await caretaker.page.getByRole('button', { name: /send note for family review/i }).click();
+  const missingEvidence = await csrfPost(caretaker.page, { action: 'request_transition', decision: 'submit', request_id: requestId, note: 'Cleaned and tidied the grave area.' });
+  assert.match(await missingEvidence.text(), /Add at least one before and one after photo/);
+  const invalidEvidence = await evidencePost(caretaker.page, requestId, 'before', Buffer.from('not an image'));
+  assert.match(await invalidEvidence.text(), /valid JPEG, PNG, or WebP/);
+  const prematureAfter = await evidencePost(caretaker.page, requestId, 'after');
+  assert.match(await prematureAfter.text(), /Add a before photo/);
+  const beforeUpload = await evidencePost(caretaker.page, requestId, 'before');
+  assert.match(await beforeUpload.text(), /Evidence photo added/);
+  await caretaker.page.reload();
+  await caretaker.page.locator('#evidence-after-file').setInputFiles({ name: 'after.png', mimeType: 'image/png', buffer: png });
+  await caretaker.page.getByRole('button', { name: 'Upload after photo' }).click();
   await caretaker.page.waitForURL(/page=request&id=/);
+  assert.equal(await caretaker.page.locator('.evidence-photo img').count(), 2);
+  caretaker.page.once('dialog', (dialog) => dialog.accept());
+  await caretaker.page.locator('.evidence-stage').filter({ hasText: 'After' }).getByRole('button', { name: 'Remove photo' }).click();
+  await caretaker.page.waitForURL(/page=request&id=/);
+  assert.equal(await caretaker.page.locator('.evidence-photo img').count(), 1);
+  const missingAfterAgain = await csrfPost(caretaker.page, { action: 'request_transition', decision: 'submit', request_id: requestId, note: 'Cleaned and tidied the grave area.' });
+  assert.match(await missingAfterAgain.text(), /Add at least one before and one after photo/);
+  await caretaker.page.locator('#evidence-after-file').setInputFiles({ name: 'after.png', mimeType: 'image/png', buffer: png });
+  await caretaker.page.getByRole('button', { name: 'Upload after photo' }).click();
+  await caretaker.page.waitForURL(/page=request&id=/);
+  assert.equal(await caretaker.page.locator('.evidence-photo img').count(), 2);
+  const evidenceUrl = new URL(await caretaker.page.locator('.evidence-photo img').first().getAttribute('src'), baseUrl).href;
+  assert.equal((await other.page.request.get(evidenceUrl)).status(), 404);
+  await other.page.goto(`${baseUrl}?page=overview`);
+  const forgedEvidenceRemove = await csrfPost(other.page, { action: 'remove_request_evidence', evidence_id: new URL(evidenceUrl).searchParams.get('id'), request_id: requestId });
+  assert.equal(forgedEvidenceRemove.status(), 403);
+  assert.equal((await admin.page.request.get(evidenceUrl)).status(), 200);
+  const evidenceId = new URL(evidenceUrl).searchParams.get('id');
+  const evidenceLookup = spawnSync('php', ['-r', "require 'app/database.php'; $q = db()->prepare('SELECT storage_name FROM request_evidence WHERE id = ?'); $q->execute([$argv[1]]); echo $q->fetchColumn();", '--', evidenceId], { encoding: 'utf8' });
+  assert.equal(evidenceLookup.status, 0);
+  assert.match(evidenceLookup.stdout, /^[a-f0-9]{48}$/);
+  assert.equal((await caretaker.page.request.get(new URL(`../storage/request-evidence/${evidenceLookup.stdout}`, baseUrl).href)).status(), 403);
+  await caretaker.page.locator('#work-note').fill('Cleaned and tidied the grave area.');
+  await caretaker.page.getByRole('button', { name: /send evidence for family review/i }).click();
+  await caretaker.page.waitForURL(/page=request&id=/);
+  const lockedEvidence = await csrfPost(caretaker.page, { action: 'remove_request_evidence', evidence_id: evidenceId, request_id: requestId });
+  assert.match(await lockedEvidence.text(), /can no longer be removed/);
   await family.page.reload();
   assert.match(await family.page.locator('.request-status-banner').textContent(), /Awaiting family review/);
   assert.match(await family.page.locator('.request-timeline').textContent(), /Cleaned and tidied/);
+  assert.equal(await family.page.locator('.evidence-photo img').count(), 2);
+  assert.equal(await family.page.locator('.evidence-photo img').first().evaluate((image) => image.complete && image.naturalWidth > 0), true);
+  await family.page.screenshot({ path: path.resolve('storage/evidence-family-mobile.png'), fullPage: true });
+  await family.page.goto(`${baseUrl}?page=updates`);
+  assert.match(await family.page.locator('.update-list').textContent(), /before-and-after evidence/i);
+  await family.page.locator('.update-card').filter({ hasText: /before-and-after evidence/i }).getByRole('button', { name: /open request/i }).click();
+  await family.page.waitForURL(new RegExp(`page=request&id=${requestId}`));
   await family.page.getByRole('button', { name: 'Approve reported work' }).click();
   await family.page.waitForURL(/page=request&id=/);
   assert.match(await family.page.locator('.request-status-banner').textContent(), /Completed/);
-  assert.equal(await family.page.locator('.request-timeline li').count(), 6);
+  assert.equal(await family.page.locator('.request-timeline li').count(), 10);
   await other.page.goto(`${baseUrl}?page=overview`);
   const forgedCancel = await csrfPost(other.page, { action: 'request_transition', decision: 'cancel', request_id: requestId });
   assert.equal(forgedCancel.status(), 404);
@@ -234,19 +291,62 @@ try {
   for (const [decision, extra] of [
     ['accept', {}],
     ['start', { confirmed: '1', headstone_name: 'Maria R. Test', section_code: 'Garden A', lot_code: 'Lot 12' }],
-    ['submit', { note: 'The grave area was cleaned and tidied.' }],
   ]) {
     const response = await csrfPost(caretaker.page, { action: 'request_transition', decision, request_id: issueId, ...extra });
     assert.equal(response.status(), 200);
   }
+  assert.match(await (await evidencePost(caretaker.page, issueId, 'before')).text(), /Evidence photo added/);
+  assert.match(await (await evidencePost(caretaker.page, issueId, 'after')).text(), /Evidence photo added/);
+  const firstSubmit = await csrfPost(caretaker.page, { action: 'request_transition', decision: 'submit', request_id: issueId, note: 'The grave area was cleaned and tidied.' });
+  assert.equal(firstSubmit.status(), 200);
   await family.page.goto(`${baseUrl}?page=request&id=${issueId}`);
   await family.page.locator('#issue-note').fill('The surrounding grass still needs trimming.');
   await family.page.getByRole('button', { name: 'Report an issue' }).click();
   await family.page.waitForURL(/page=request&id=/);
   assert.match(await family.page.locator('.request-status-banner').textContent(), /Issue reported/);
   assert.match(await family.page.locator('.request-timeline').textContent(), /grass still needs trimming/);
+  await admin.page.goto(`${baseUrl}?page=updates`);
+  assert.match(await admin.page.locator('.update-list').textContent(), /needs review/);
+  await admin.page.goto(`${baseUrl}?page=request&id=${issueId}`);
+  await admin.page.locator('#resolution-note').fill('I reviewed the images and asked the caretaker to check the grass.');
+  await admin.page.getByRole('button', { name: 'Send response for family review' }).click();
+  await admin.page.waitForURL(/page=request&id=/);
+  await family.page.reload();
+  assert.match(await family.page.locator('.request-status-banner').textContent(), /Awaiting family review/);
+  assert.match(await family.page.locator('.request-timeline').textContent(), /Administrator response to the issue/);
+  await family.page.locator('#issue-note').fill('The grass remains untrimmed and needs another visit.');
+  await family.page.getByRole('button', { name: 'Report an issue' }).click();
+  await family.page.waitForURL(/page=request&id=/);
+  await admin.page.reload();
+  await admin.page.locator('#rework-note').fill('Please return and trim the surrounding grass.');
+  await admin.page.getByRole('button', { name: 'Request new work round' }).click();
+  await admin.page.waitForURL(/page=request&id=/);
+  assert.match(await admin.page.locator('.request-status-banner').textContent(), /Requested/);
+  assert.match(await admin.page.locator('#evidence-title').textContent(), /Before and after/);
+  await admin.page.locator('#assign-caretaker').selectOption(caretakerId);
+  await admin.page.getByRole('button', { name: 'Assign caretaker' }).click();
+  await admin.page.waitForURL(/page=request&id=/);
+  await caretaker.page.goto(`${baseUrl}?page=request&id=${issueId}`);
+  for (const [decision, extra] of [
+    ['accept', {}],
+    ['start', { confirmed: '1', headstone_name: 'Maria R. Test', section_code: 'Garden A', lot_code: 'Lot 12' }],
+  ]) {
+    const response = await csrfPost(caretaker.page, { action: 'request_transition', decision, request_id: issueId, ...extra });
+    assert.equal(response.status(), 200);
+  }
+  const staleEvidence = await csrfPost(caretaker.page, { action: 'request_transition', decision: 'submit', request_id: issueId, note: 'Trimming was completed around the grave.' });
+  assert.match(await staleEvidence.text(), /Add at least one before and one after photo/);
+  assert.match(await (await evidencePost(caretaker.page, issueId, 'before')).text(), /Evidence photo added/);
+  assert.match(await (await evidencePost(caretaker.page, issueId, 'after')).text(), /Evidence photo added/);
+  assert.equal((await csrfPost(caretaker.page, { action: 'request_transition', decision: 'submit', request_id: issueId, note: 'Trimming was completed around the grave.' })).status(), 200);
+  await family.page.reload();
+  assert.match(await family.page.locator('.request-status-banner').textContent(), /Awaiting family review/);
+  assert.equal(await family.page.locator('.evidence-round').count(), 2);
+  await family.page.getByRole('button', { name: 'Approve reported work' }).click();
+  await family.page.waitForURL(/page=request&id=/);
+  assert.match(await family.page.locator('.request-status-banner').textContent(), /Completed/);
   assert.deepEqual(errors, []);
-  console.log('Request checks passed: creation, price snapshot, assignment, confirmation, progress, approval, decline, cancellation, issue, access, and mobile layout.');
+  console.log('Workflow checks passed: prices, assignments, before-and-after evidence, private access, family review, issue resolution, rework, updates, and mobile layout.');
   await Promise.all([admin.context.close(), caretaker.context.close(), family.context.close(), other.context.close()]);
 } finally {
   await browser.close();

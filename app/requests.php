@@ -131,6 +131,7 @@ function request_create(array $values, array $user): array
         $insert->execute([$graveId, $user['id'], $grave['cemetery_id'], $serviceId, $service['name'], $service['description'], $service['price_centavos'], $grave['deceased_name'], $grave['headstone_name'], $grave['cemetery_name'], $grave['section_code'], $grave['block_code'], $grave['row_code'], $grave['lot_code'], $date, $instructions]);
         $id = (int) $connection->lastInsertId();
         request_event($connection, $id, (int) $user['id'], null, 'requested', 'Family requested ' . $service['name'] . ' at ' . catalog_money((int) $service['price_centavos']) . ' (pilot estimate).');
+        update_notify_admins($connection, $id, (int) $user['id'], 'New care request #' . $id . ' needs assignment.');
         $connection->commit();
         return ['id' => $id];
     } catch (Throwable $exception) {
@@ -162,6 +163,8 @@ function request_transition(int $id, array $user, string $action, array $values)
             'submit' => ['caretaker', ['in_progress'], 'awaiting_review'],
             'approve' => ['family', ['awaiting_review'], 'completed'],
             'report_issue' => ['family', ['awaiting_review'], 'issue_reported'],
+            'rework' => ['admin', ['issue_reported'], 'requested'],
+            'resolve_issue' => ['admin', ['issue_reported'], 'awaiting_review'],
             'cancel' => ['family', ['requested', 'assigned', 'accepted'], 'cancelled'],
         ];
         $rule = $rules[$action] ?? null;
@@ -171,7 +174,7 @@ function request_transition(int $id, array $user, string $action, array $values)
         }
         $to = $rule[2];
         $note = trim($values['note'] ?? '');
-        if (mb_strlen($note) > 1000 || (in_array($action, ['decline', 'requeue', 'submit', 'report_issue'], true) && mb_strlen($note) < 10)) {
+        if (mb_strlen($note) > 1000 || (in_array($action, ['decline', 'requeue', 'submit', 'report_issue', 'rework', 'resolve_issue'], true) && mb_strlen($note) < 10)) {
             $connection->rollBack();
             return ['error' => 'Enter a reason or work note between 10 and 1,000 characters.'];
         }
@@ -202,16 +205,63 @@ function request_transition(int $id, array $user, string $action, array $values)
                 return ['error' => 'Confirm the recorded headstone name, section, and lot before starting.'];
             }
             $note = 'Caretaker confirmed the headstone name, section, and lot before starting.';
-        } elseif ($action === 'decline' || $action === 'requeue') {
+        } elseif (in_array($action, ['decline', 'requeue', 'rework'], true)) {
             $caretakerId = null;
+            if ($action === 'rework') $note = 'Administrator requested a new work round: ' . $note;
         } elseif ($action === 'accept') {
             $note = 'Caretaker accepted the assignment.';
         } elseif ($action === 'approve') {
-            $note = 'Family approved the reported work.';
+            $note = 'Family approved the submitted report.';
+        } elseif ($action === 'resolve_issue') {
+            $note = 'Administrator response to the issue: ' . $note;
+        }
+        if (mb_strlen($note) > 1000) {
+            $connection->rollBack();
+            return ['error' => 'Keep the reason or work note under 1,000 characters.'];
+        }
+        if ($action === 'submit') {
+            $round = request_round($connection, $id);
+            $counts = $connection->prepare('SELECT stage, COUNT(*) AS total FROM request_evidence WHERE request_id = ? AND round_no = ? GROUP BY stage');
+            $counts->execute([$id, $round]);
+            $stages = ['before' => 0, 'after' => 0];
+            foreach ($counts->fetchAll() as $entry) $stages[$entry['stage']] = (int) $entry['total'];
+            if ($stages['before'] < 1 || $stages['after'] < 1) {
+                $connection->rollBack();
+                return ['error' => 'Add at least one before and one after photo for this work round before sending it for family review.'];
+            }
         }
         $update = $connection->prepare('UPDATE service_requests SET status = ?, caretaker_id = ? WHERE id = ?');
         $update->execute([$to, $caretakerId, $id]);
         request_event($connection, $id, (int) $user['id'], $from, $to, $note);
+        $actorId = (int) $user['id'];
+        $familyId = (int) $request['family_user_id'];
+        $assignedId = (int) ($request['caretaker_id'] ?? 0);
+        if ($action === 'assign') {
+            update_notify($connection, $id, $familyId, $actorId, 'Care request #' . $id . ' was assigned to a caretaker.');
+            update_notify($connection, $id, (int) $caretakerId, $actorId, 'You have a new care assignment #' . $id . '.');
+        } elseif ($action === 'submit') {
+            update_notify($connection, $id, $familyId, $actorId, 'Before-and-after evidence for request #' . $id . ' is ready for review.');
+            update_notify_admins($connection, $id, $actorId, 'Caretaker submitted evidence for request #' . $id . '.');
+        } elseif ($action === 'report_issue') {
+            update_notify($connection, $id, $assignedId, $actorId, 'The family reported an issue with request #' . $id . '.');
+            update_notify_admins($connection, $id, $actorId, 'An issue with request #' . $id . ' needs review.');
+        } elseif ($action === 'approve') {
+            update_notify($connection, $id, $assignedId, $actorId, 'The family approved request #' . $id . '.');
+            update_notify_admins($connection, $id, $actorId, 'Request #' . $id . ' was approved by the family.');
+        } elseif ($action === 'decline') {
+            update_notify($connection, $id, $familyId, $actorId, 'The caretaker declined request #' . $id . '; it needs reassignment.');
+            update_notify_admins($connection, $id, $actorId, 'Caretaker declined request #' . $id . '; please reassign it.');
+        } elseif (in_array($action, ['requeue', 'rework'], true)) {
+            update_notify($connection, $id, $familyId, $actorId, 'Request #' . $id . ' was returned for assignment. See its timeline.');
+        } elseif ($action === 'resolve_issue') {
+            update_notify($connection, $id, $familyId, $actorId, 'Administrator responded to the issue on request #' . $id . '.');
+            update_notify($connection, $id, $assignedId, $actorId, 'Administrator responded to the issue on request #' . $id . '.');
+        } elseif ($action === 'cancel') {
+            update_notify($connection, $id, $assignedId, $actorId, 'The family cancelled request #' . $id . '.');
+            update_notify_admins($connection, $id, $actorId, 'The family cancelled request #' . $id . '.');
+        } elseif (in_array($action, ['accept', 'start'], true)) {
+            update_notify($connection, $id, $familyId, $actorId, 'Request #' . $id . ' is now ' . strtolower(request_status_label($to)) . '.');
+        }
         $connection->commit();
         return ['id' => $id, 'status' => $to];
     } catch (Throwable $exception) {

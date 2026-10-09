@@ -11,6 +11,8 @@ require_once dirname(__DIR__) . '/app/auth.php';
 require_once dirname(__DIR__) . '/app/catalog.php';
 require_once dirname(__DIR__) . '/app/graves.php';
 require_once dirname(__DIR__) . '/app/requests.php';
+require_once dirname(__DIR__) . '/app/updates.php';
+require_once dirname(__DIR__) . '/app/evidence.php';
 
 set_exception_handler(static function (Throwable $exception): void {
     error_log((string) $exception);
@@ -32,7 +34,7 @@ header('Cache-Control: no-store');
 
 start_secure_session();
 $page = $_GET['page'] ?? 'overview';
-if (!is_string($page) || !in_array($page, ['overview', 'components', 'account', 'caretakers', 'cemeteries', 'plots', 'services', 'families', 'graves', 'grave', 'grave-form', 'grave-photo', 'requests', 'request', 'request-new', 'login', 'register', 'enroll'], true)) {
+if (!is_string($page) || !in_array($page, ['overview', 'components', 'account', 'caretakers', 'cemeteries', 'plots', 'services', 'families', 'graves', 'grave', 'grave-form', 'grave-photo', 'requests', 'request', 'request-new', 'request-evidence', 'updates', 'login', 'register', 'enroll'], true)) {
     http_response_code(404);
     $errorTitle = 'Page not found';
     $errorMessage = 'The page you requested does not exist.';
@@ -72,6 +74,21 @@ if ($page === 'grave-photo') {
     if (!$user || !grave_send_photo($photoId, $user)) {
         http_response_code(404);
         $errorTitle = 'Photo not found';
+        $errorMessage = 'The requested photo is unavailable.';
+        require dirname(__DIR__) . '/app/views/error.php';
+    }
+    exit;
+}
+if ($page === 'request-evidence') {
+    if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD'], true)) {
+        http_response_code(405);
+        header('Allow: GET, HEAD');
+        exit;
+    }
+    $evidenceId = catalog_id(isset($_GET['id']) && is_string($_GET['id']) ? $_GET['id'] : '');
+    if (!$user || !request_evidence_send($evidenceId, $user)) {
+        http_response_code(404);
+        $errorTitle = 'Evidence not found';
         $errorMessage = 'The requested photo is unavailable.';
         require dirname(__DIR__) . '/app/views/error.php';
     }
@@ -237,6 +254,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_flash(isset($result['id']) ? 'Request updated: ' . request_status_label($result['status']) . '.' : $result['error'], isset($result['id']) ? 'success' : 'error');
         header('Location: ' . ($decision === 'decline' && isset($result['id']) ? '?page=requests' : '?page=request&id=' . $requestId), true, 303);
         exit;
+    } elseif ($action === 'upload_request_evidence' && $user && $user['role'] === 'caretaker') {
+        $requestId = catalog_id(request_value('request_id'));
+        $result = request_evidence_upload($requestId, $user, request_value('stage'), $_FILES['photo'] ?? null, request_value('caption'));
+        if (isset($result['not_found'])) {
+            http_response_code(404);
+            $errorTitle = 'Request not found';
+            $errorMessage = 'This care request is unavailable.';
+            require dirname(__DIR__) . '/app/views/error.php';
+            exit;
+        }
+        set_flash(isset($result['id']) ? 'Evidence photo added.' : $result['error'], isset($result['id']) ? 'success' : 'error');
+        header('Location: ?page=request&id=' . $requestId . '#request-evidence', true, 303);
+        exit;
+    } elseif ($action === 'remove_request_evidence' && $user && $user['role'] === 'caretaker') {
+        $result = request_evidence_remove(catalog_id(request_value('evidence_id')), $user);
+        if (isset($result['not_found'])) {
+            http_response_code(404);
+            $errorTitle = 'Evidence not found';
+            $errorMessage = 'This evidence photo is unavailable.';
+            require dirname(__DIR__) . '/app/views/error.php';
+            exit;
+        }
+        $requestId = (int) ($result['request_id'] ?? catalog_id(request_value('request_id')));
+        set_flash(isset($result['request_id']) ? 'Evidence photo removed.' : $result['error'], isset($result['request_id']) ? 'success' : 'error');
+        header('Location: ?page=request&id=' . $requestId . '#request-evidence', true, 303);
+        exit;
+    } elseif ($action === 'open_update' && $user) {
+        $requestId = update_open(catalog_id(request_value('update_id')), $user);
+        if ($requestId === null) {
+            http_response_code(404);
+            $errorTitle = 'Update not found';
+            $errorMessage = 'This update is unavailable.';
+            require dirname(__DIR__) . '/app/views/error.php';
+            exit;
+        }
+        if ($requestId === 0) {
+            set_flash('This assignment is no longer available to your account.', 'error');
+            redirect_to('updates');
+        }
+        header('Location: ?page=request&id=' . $requestId, true, 303);
+        exit;
     } else {
         http_response_code(403);
         $errorTitle = 'Action unavailable';
@@ -277,6 +335,8 @@ if ($page === 'request-new' && $user['role'] !== 'family') {
 $role = $user['role'];
 $roleLabels = ['admin' => 'Administrator', 'family' => 'Family member', 'caretaker' => 'Caretaker'];
 $flash = take_flash();
+$unreadUpdateCount = updates_unread_count((int) $user['id']);
+if ($page === 'updates') $updates = updates_list((int) $user['id']);
 if ($page === 'caretakers') {
     $caretakers = list_caretakers();
     $cemeteries = catalog_cemeteries();
@@ -351,6 +411,11 @@ if ($page === 'request') {
         exit;
     }
     $requestHistory = request_events((int) $careRequest['id']);
+    $requestRound = request_round(db(), (int) $careRequest['id']);
+    $requestEvidence = request_evidence_list((int) $careRequest['id']);
+    $evidenceByRound = [];
+    foreach ($requestEvidence as $item) $evidenceByRound[(int) $item['round_no']][$item['stage']][] = $item;
+    $currentEvidenceCounts = ['before' => count($evidenceByRound[$requestRound]['before'] ?? []), 'after' => count($evidenceByRound[$requestRound]['after'] ?? [])];
     if ($role === 'family' || ($role === 'caretaker' && $user['status'] === 'verified' && in_array($careRequest['status'], ['assigned', 'accepted', 'in_progress', 'awaiting_review'], true))) $requestReferencePhotos = grave_photos((int) $careRequest['grave_id']);
     if ($role === 'admin' && $careRequest['status'] === 'requested') $requestCaretakers = request_candidates((int) $careRequest['cemetery_id']);
 }
