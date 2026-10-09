@@ -53,6 +53,36 @@
     button.addEventListener('click', () => showPreviewMessage('This is a design preview. This action will be connected in a later phase.'));
   });
 
+  document.querySelectorAll('[data-confirm-remove]').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      if (!window.confirm('Remove this reference photo?')) event.preventDefault();
+    });
+  });
+
+  const locationButton = document.querySelector('[data-grave-location]');
+  locationButton?.addEventListener('click', () => {
+    const feedback = document.querySelector('[data-grave-location-feedback]');
+    if (!navigator.geolocation) {
+      if (feedback) feedback.textContent = 'Location is unavailable here. You can enter coordinates manually.';
+      return;
+    }
+    locationButton.disabled = true;
+    if (feedback) feedback.textContent = 'Asking your device for its current location…';
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        document.getElementById('grave-latitude').value = position.coords.latitude.toFixed(7);
+        document.getElementById('grave-longitude').value = position.coords.longitude.toFixed(7);
+        if (feedback) feedback.textContent = 'Coordinates added. Save the grave to keep this optional pin.';
+        locationButton.disabled = false;
+      },
+      () => {
+        if (feedback) feedback.textContent = 'Location was unavailable or declined. You can enter coordinates manually.';
+        locationButton.disabled = false;
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    );
+  });
+
   const form = document.getElementById('sample-form');
   if (!form) return;
   const fieldMessages = {

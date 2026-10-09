@@ -358,6 +358,64 @@ h1, h2, h3, p { text-wrap: pretty; }
 .catalog-activity li p { color: #6c806f; font-size: 11px; margin: 3px 0 0; overflow-wrap: anywhere; }
 .catalog-activity time { color: #809181; font-size: 10px; white-space: nowrap; }
 
+/* Private family grave records. */
+.grave-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 17px; }
+.grave-card { min-width: 0; overflow: hidden; background: #fff; border: 1px solid #e9ece5; border-radius: 16px; box-shadow: 0 6px 23px #203d2908; }
+.grave-card-photo { display: flex; align-items: center; justify-content: center; height: 170px; background: linear-gradient(135deg, #e5ecdc, #cfddc9); color: #688d70; overflow: hidden; }
+.grave-card-photo img { width: 100%; height: 100%; object-fit: cover; }
+.grave-card-body { padding: 20px; }
+.grave-card-body h2 { margin: 7px 0 3px; color: #244838; font: 400 23px Georgia, serif; overflow-wrap: anywhere; }
+.grave-card-dates { color: #728276; font-size: 12px; }
+.grave-card-place { display: flex; align-items: flex-start; gap: 7px; margin: 17px 0; color: #536d59; font-size: 12px; line-height: 1.5; }
+.grave-card-place svg { flex: none; margin-top: 1px; }
+.grave-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid #edf0ea; padding-top: 14px; color: #748578; font-size: 11px; }
+.grave-card-footer a, .grave-home-empty a { display: inline-flex; align-items: center; gap: 5px; color: #215a3e; font-weight: 700; text-decoration: underline; white-space: nowrap; }
+.grave-empty { text-align: center; padding: 42px 25px; }
+.grave-empty .next-illustration { margin: 0 auto 16px; }
+.grave-empty h2, .grave-home-empty h3 { color: #294e3b; font: 400 26px Georgia, serif; }
+.grave-empty p { max-width: 480px; margin: 10px auto 20px; color: #68796d; font-size: 13px; line-height: 1.6; }
+.grave-home-empty { display: flex; align-items: center; gap: 25px; }
+.grave-home-empty .next-illustration { flex: none; margin: 0; }
+.grave-home-empty p { margin: 8px 0 13px; color: #68796d; font-size: 12px; }
+.grave-form-layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, .7fr); gap: 18px; align-items: start; }
+.grave-form-card .form-field { margin-top: 18px; }
+.grave-form-card .admin-form-row { margin-top: 0; }
+.grave-form-section { margin-top: 32px; padding-top: 25px; border-top: 1px solid #edf0ea; }
+.grave-form-aside { position: sticky; top: 20px; }
+.grave-form-aside .next-illustration { margin-bottom: 20px; }
+.grave-form-aside h2 { color: #294e3b; font: 400 24px Georgia, serif; }
+.grave-form-aside p { margin-top: 12px; color: #68796d; font-size: 12px; line-height: 1.6; }
+.grave-location-button { margin-top: 15px; }
+.grave-location-feedback { min-height: 19px; margin: 8px 0 0; color: #56715c; font-size: 11px; }
+.grave-form-actions { border-top: 1px solid #edf0ea; margin-top: 24px; padding-top: 23px; }
+.grave-heading-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.grave-detail-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(280px, .75fr); gap: 18px; align-items: start; }
+.grave-detail-main, .grave-detail-side { display: grid; gap: 18px; min-width: 0; }
+.grave-memorial { display: flex; align-items: center; gap: 22px; background: linear-gradient(110deg, #f8f8f1, #eef4e9); }
+.grave-memorial-icon { display: grid; place-items: center; width: 105px; height: 105px; flex: none; border-radius: 50%; background: #e2eddf; color: #5a8a65; }
+.grave-memorial h2 { margin: 7px 0; color: #244838; font: 400 32px Georgia, serif; overflow-wrap: anywhere; }
+.grave-memorial p:last-child { color: #68796d; font-size: 12px; }
+.grave-details .details-list { margin-top: 16px; }
+.grave-details dd { overflow-wrap: anywhere; }
+.grave-details dd small { display: block; color: #829186; font-size: 10px; }
+.grave-photo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 20px 0; }
+.grave-photo { overflow: hidden; border: 1px solid #e5eae2; border-radius: 11px; background: #fafbf8; }
+.grave-photo img { width: 100%; height: 180px; object-fit: cover; }
+.grave-photo figcaption { display: grid; gap: 4px; padding: 11px 12px; color: #365343; font-size: 12px; overflow-wrap: anywhere; }
+.grave-photo figcaption small { color: #778a7b; font-size: 10px; }
+.grave-photo figcaption button { margin-top: 4px; color: #905c56; font-size: 11px; text-decoration: underline; }
+.grave-photo-upload { display: grid; gap: 12px; border-top: 1px solid #edf0ea; padding-top: 17px; }
+.grave-photo-upload .form-field { margin: 0; }
+.grave-photo-upload button { justify-self: start; }
+.grave-timeline { list-style: none; margin: 13px 0 0; padding: 0; }
+.grave-timeline li { display: flex; gap: 11px; padding: 14px 0; border-top: 1px solid #edf0ea; }
+.grave-timeline-dot { width: 10px; height: 10px; margin-top: 4px; flex: none; border-radius: 50%; background: #7fa88a; box-shadow: 0 0 0 4px #eaf2e8; }
+.grave-timeline strong { display: block; color: #365443; font-size: 12px; }
+.grave-timeline small { display: block; margin-top: 4px; color: #7b8c7e; font-size: 10px; }
+.grave-care-pending h2 { margin-top: 8px; color: #294e3b; font: 400 23px Georgia, serif; }
+.grave-care-pending p:not(.eyebrow) { margin: 12px 0; color: #68796d; font-size: 12px; line-height: 1.6; }
+.grave-care-pending .next-illustration { margin-bottom: 15px; }
+
 /* Keep supporting text readable on a phone and in the family workspace. */
 .page-lead, .hero-copy p { font-size: 13px; }
 .stat-card p, .stat-foot, .journey-list small, .next-card > p, .profile-body > p, .profile-location, .assignment-card p, .assignment-card div > span, .muted-paragraph, .kit-description, .kit-note, .form-field > small { color: #68796d; font-size: 12px; }
@@ -371,6 +429,9 @@ h1, h2, h3, p { text-wrap: pretty; }
   .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-page-grid { grid-template-columns: 1fr; }
   .admin-form-card { position: static; }
+  .grave-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grave-detail-grid { grid-template-columns: 1fr; }
+  .grave-detail-side { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 1023px) {
   .sidebar { position: fixed; inset: 0 auto 0 0; height: 100dvh; transform: translateX(-100%); transition: transform .25s ease; box-shadow: 18px 0 50px #122b2440; }
@@ -425,6 +486,13 @@ h1, h2, h3, p { text-wrap: pretty; }
   .admin-record-foot { flex-wrap: wrap; }
   .admin-filters select, .admin-filters input { flex-basis: 100%; }
   .admin-filters button { width: 100%; }
+  .grave-card-grid, .grave-form-layout, .grave-detail-side { grid-template-columns: 1fr; }
+  .grave-form-aside { position: static; }
+  .grave-home-empty { align-items: flex-start; }
+  .grave-home-empty .next-illustration { width: 60px; height: 60px; }
+  .grave-memorial { align-items: flex-start; gap: 15px; }
+  .grave-memorial-icon { width: 65px; height: 65px; }
+  .grave-memorial h2 { font-size: 25px; }
 }
 @media (max-width: 400px) {
   .stat-grid { gap: 9px; }
@@ -436,6 +504,7 @@ h1, h2, h3, p { text-wrap: pretty; }
   .profile-body h3 { font-size: 17px; }
   .profile-bottom { flex-wrap: wrap; }
   .surface-card { padding: 20px; }
+  .grave-photo-grid { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }

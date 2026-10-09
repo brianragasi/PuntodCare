@@ -12,7 +12,7 @@ Build a mobile-friendly pilot for one partner cemetery. A family registers a gra
 
 The phases below define dependencies, not fixed delivery dates. Complete and verify one feature at a time, then explain it before moving on.
 
-**Current progress (October 2, 2026): Phases 1–3 complete.** The shared design, database-backed accounts, login/logout, permissions, caretaker review, and administrator catalog for cemeteries, plot references, caretaker authorizations, services, and pilot prices are implemented. Catalog changes and price history are recorded. Family grave profiles and service requests are still labeled examples; they begin in Phases 4 and 5.
+**Current progress (October 9, 2026): Phases 1–4 complete.** Accounts, caretaker review, the administrator catalog, and private family grave profiles with reference photos, optional coordinates, and profile history are implemented. Service requests, inspections, and condition reports begin in later phases; no care history is invented before a request exists.
 
 ## 1. Foundation and shared design
 
@@ -82,7 +82,7 @@ Prepare the cemetery data and approved providers needed for actual service reque
 - Create and edit a grave profile: deceased person's name, dates, cemetery, section, block/row, lot, reference photos, and optional location pin.
 - Show the family's graves as readable cards.
 - Display service history, latest documented condition, and last inspection date when available.
-- Start a care request from a grave profile.
+- Prepare the grave profile as the starting point for a care request in Phase 5.
 
 ### Purpose
 
