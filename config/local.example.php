@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-// Copy to local.php and update for your own MySQL/MariaDB installation.
-// local.php is ignored by Git and blocked from direct web access.
+// For XAMPP, copy to config/local.php. For a deployed site, place it in the
+// sibling puntodcare-private/local.php directory outside the web root.
 return [
     'database' => [
         'host' => '127.0.0.1',

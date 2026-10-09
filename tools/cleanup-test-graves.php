@@ -26,7 +26,7 @@ try {
     $connection->commit();
     foreach ($storageNames as $storageName) {
         if (!preg_match('/^[a-f0-9]{48}$/', $storageName)) continue;
-        $path = dirname(__DIR__) . '/storage/grave-photos/' . $storageName;
+        $path = puntod_storage_directory('grave-photos') . '/' . $storageName;
         if (is_file($path) && !unlink($path)) throw new RuntimeException('Could not remove a temporary photo.');
     }
     echo "Temporary graves and photos removed.\n";

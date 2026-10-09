@@ -14,7 +14,7 @@ $delete = db()->prepare('DELETE r FROM service_requests r JOIN cemeteries c ON c
 $delete->execute([$name]);
 foreach ($storageNames as $storageName) {
     if (!preg_match('/^[a-f0-9]{48}$/', $storageName)) continue;
-    $path = dirname(__DIR__) . '/storage/request-evidence/' . $storageName;
+    $path = puntod_storage_directory('request-evidence') . '/' . $storageName;
     if (is_file($path) && !unlink($path)) throw new RuntimeException('Could not remove temporary request evidence.');
 }
 echo "Temporary requests and evidence removed.\n";

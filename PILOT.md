@@ -32,7 +32,7 @@ If a form loses its connection before confirming a result, reopen **Care request
 
 ## Back up a pilot
 
-Use phpMyAdmin **Export** to save a SQL backup of the configured database. Copy the private `storage/grave-photos/` and `storage/request-evidence/` folders too; the SQL backup contains photo metadata but not the files. Keep backups and `config/local.php` outside the repository. To restore, import the SQL into an isolated database, restore those two folders under `storage/`, set `config/local.php` to that database, and verify a grave photo and an evidence photo while signed in as an authorized participant. Never restore a demo backup over partner data.
+Use phpMyAdmin **Export** to save a SQL backup of the configured database. Copy the private photo folders too: local XAMPP uses `storage/`, while a hosted deployment uses the sibling `puntodcare-private/` directory. The SQL backup contains photo metadata but not the files. Keep backups and `local.php` outside the repository. To restore, import the SQL into an isolated database, restore the photo folders to the matching private location, update `local.php`, and verify a grave photo and an evidence photo while signed in as an authorized participant. Never restore a demo backup over partner data.
 
 ## Known limits
 

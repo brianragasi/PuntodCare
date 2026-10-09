@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/private.php';
 
 function db(): PDO
 {
@@ -8,9 +9,9 @@ function db(): PDO
         return $connection;
     }
 
-    $path = dirname(__DIR__) . '/config/local.php';
+    $path = puntod_config_path();
     if (!is_file($path)) {
-        throw new RuntimeException('Database configuration is missing. Copy config/local.example.php to config/local.php.');
+        throw new RuntimeException('Database configuration is missing. Create local.php in the configured private directory.');
     }
     $settings = require $path;
     $database = $settings['database'] ?? null;

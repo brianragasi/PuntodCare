@@ -20,7 +20,7 @@ function request_evidence_list(int $requestId): array
 
 function request_evidence_directory(): string
 {
-    return dirname(__DIR__) . '/storage/request-evidence';
+    return puntod_storage_directory('request-evidence');
 }
 
 function request_evidence_upload(int $requestId, array $user, string $stage, ?array $file, string $caption): array

@@ -59,7 +59,7 @@ try {
   assert.equal(securityHeaders['x-frame-options'], 'DENY');
   assert.equal(securityHeaders['x-content-type-options'], 'nosniff');
   assert.equal(securityHeaders['referrer-policy'], 'strict-origin-when-cross-origin');
-  for (const privatePath of ['config/local.php', 'storage/admin-credentials.json', 'storage/demo-credentials.json', '.git/config']) {
+  for (const privatePath of ['config/local.php', 'database/001_accounts.sql', 'app/requests.php', 'tools/migrate.php', 'resources/css/app.css', 'storage/admin-credentials.json', 'storage/demo-credentials.json', '.git/config']) {
     const response = await guest.page.request.get(new URL(`../${privatePath}`, baseUrl).href);
     assert.equal(response.status(), 403, `${privatePath} must be private`);
   }

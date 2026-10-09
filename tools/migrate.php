@@ -6,9 +6,11 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
-$configPath = dirname(__DIR__) . '/config/local.php';
+require_once dirname(__DIR__) . '/app/private.php';
+
+$configPath = puntod_config_path();
 if (!is_file($configPath)) {
-    fwrite(STDERR, "Copy config/local.example.php to config/local.php first.\n");
+    fwrite(STDERR, "Create the private local.php database configuration first.\n");
     exit(1);
 }
 $config = require $configPath;
@@ -26,8 +28,13 @@ try {
         (string) $settings['password'],
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
-    $server->exec('CREATE DATABASE IF NOT EXISTS `' . $databaseName . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
-    $server->exec('USE `' . $databaseName . '`');
+    try {
+        $server->exec('USE `' . $databaseName . '`');
+    } catch (PDOException $exception) {
+        if (($exception->errorInfo[1] ?? null) !== 1049) throw $exception;
+        $server->exec('CREATE DATABASE `' . $databaseName . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        $server->exec('USE `' . $databaseName . '`');
+    }
     $files = glob(dirname(__DIR__) . '/database/[0-9]*.sql');
     if (!$files) throw new RuntimeException('Migration files are missing.');
     sort($files, SORT_STRING);

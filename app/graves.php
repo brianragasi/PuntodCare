@@ -124,7 +124,7 @@ function grave_save(array $values, int $familyId): array
 
 function grave_photo_directory(): string
 {
-    return dirname(__DIR__) . '/storage/grave-photos';
+    return puntod_storage_directory('grave-photos');
 }
 
 function redirect_to_grave(int $graveId): never
