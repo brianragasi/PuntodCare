@@ -18,6 +18,9 @@ $pageTitle = match ($page) {
     'graves' => 'My graves',
     'grave' => 'Grave profile',
     'grave-form' => 'Grave details',
+    'requests' => $role === 'caretaker' ? 'Assigned jobs' : 'Care requests',
+    'request' => 'Care request',
+    'request-new' => 'Request care',
     default => $overviewTitle,
 };
 ?>
@@ -58,6 +61,7 @@ $pageTitle = match ($page) {
                 <a href="<?= e(app_url($role)) ?>" class="nav-link<?= $page === 'overview' ? ' is-active' : '' ?>" <?= $page === 'overview' ? 'aria-current="page"' : '' ?>><?= icon('grid') ?><span><?= e($overviewTitle) ?></span></a>
                 <?php if ($role === 'admin'): ?>
                 <p class="nav-caption nav-caption-spaced">MANAGE PILOT</p>
+                <a href="?page=requests" class="nav-link<?= in_array($page, ['requests', 'request'], true) ? ' is-active' : '' ?>" <?= in_array($page, ['requests', 'request'], true) ? 'aria-current="page"' : '' ?>><?= icon('document') ?><span>Care requests</span></a>
                 <a href="?page=cemeteries" class="nav-link<?= $page === 'cemeteries' ? ' is-active' : '' ?>" <?= $page === 'cemeteries' ? 'aria-current="page"' : '' ?>><?= icon('pin') ?><span>Cemeteries</span></a>
                 <a href="?page=plots" class="nav-link<?= $page === 'plots' ? ' is-active' : '' ?>" <?= $page === 'plots' ? 'aria-current="page"' : '' ?>><?= icon('grid') ?><span>Plot references</span></a>
                 <a href="?page=services" class="nav-link<?= $page === 'services' ? ' is-active' : '' ?>" <?= $page === 'services' ? 'aria-current="page"' : '' ?>><?= icon('flower') ?><span>Service catalog</span></a>
@@ -65,18 +69,14 @@ $pageTitle = match ($page) {
                 <a href="?page=families" class="nav-link<?= $page === 'families' ? ' is-active' : '' ?>" <?= $page === 'families' ? 'aria-current="page"' : '' ?>><?= icon('users') ?><span>Family directory</span></a>
                 <?php elseif ($role === 'family'): ?>
                 <a href="?page=graves" class="nav-link<?= in_array($page, ['graves', 'grave', 'grave-form'], true) ? ' is-active' : '' ?>" <?= in_array($page, ['graves', 'grave', 'grave-form'], true) ? 'aria-current="page"' : '' ?>><?= icon('heart') ?><span>My graves</span></a>
+                <a href="?page=requests" class="nav-link<?= in_array($page, ['requests', 'request', 'request-new'], true) ? ' is-active' : '' ?>" <?= in_array($page, ['requests', 'request', 'request-new'], true) ? 'aria-current="page"' : '' ?>><?= icon('document') ?><span>Care requests</span></a>
+                <?php else: ?>
+                <a href="?page=requests" class="nav-link<?= in_array($page, ['requests', 'request'], true) ? ' is-active' : '' ?>" <?= in_array($page, ['requests', 'request'], true) ? 'aria-current="page"' : '' ?>><?= icon('document') ?><span>Assigned jobs</span></a>
                 <?php endif; ?>
                 <a href="?page=account" class="nav-link<?= $page === 'account' ? ' is-active' : '' ?>" <?= $page === 'account' ? 'aria-current="page"' : '' ?>><?= icon('users') ?><span>My account</span></a>
                 <a href="<?= e(app_url($role, 'components')) ?>" class="nav-link<?= $isComponents ? ' is-active' : '' ?>" <?= $isComponents ? 'aria-current="page"' : '' ?>><?= icon('sparkle') ?><span>Interface kit</span></a>
                 <p class="nav-caption nav-caption-spaced">COMING IN LATER PHASES</p>
-                <?php if ($role === 'admin'): ?>
-                    <span class="nav-link nav-pending"><?= icon('document') ?><span>Service requests</span><small>Later</small></span>
-                <?php elseif ($role === 'family'): ?>
-                    <span class="nav-link nav-pending"><?= icon('calendar') ?><span>Care requests</span><small>Later</small></span>
-                <?php else: ?>
-                    <span class="nav-link nav-pending"><?= icon('document') ?><span>Assigned jobs</span><small>Later</small></span>
-                    <span class="nav-link nav-pending"><?= icon('camera') ?><span>Photo reports</span><small>Later</small></span>
-                <?php endif; ?>
+                <span class="nav-link nav-pending"><?= icon('camera') ?><span>Photo evidence</span><small>Later</small></span>
             </nav>
 
             <form action="?page=overview" method="post" class="logout-form"><?= csrf_field() ?><input type="hidden" name="action" value="logout"><button type="submit" class="nav-link logout-button"><?= icon('arrow') ?><span>Sign out</span></button></form>
@@ -107,7 +107,7 @@ $pageTitle = match ($page) {
 
         <main id="main-content" class="page-content" tabindex="-1">
             <?php if ($flash): ?><div class="alert account-flash <?= $flash['type'] === 'error' ? 'account-flash-error' : '' ?>" role="status"><?= icon($flash['type'] === 'error' ? 'close' : 'check', 'size-5') ?><span><?= e($flash['message']) ?></span></div><?php endif; ?>
-            <?php if (in_array($page, ['overview', 'components'], true)): ?><div class="preview-banner" role="note"><?= icon('sparkle', 'size-4') ?><strong>Pilot progress</strong><span><?= $role === 'family' ? 'Your grave profiles are saved privately. Service requests and condition reports will come later.' : ($role === 'admin' ? 'Accounts and catalog records are live. Service requests and condition reports will come later.' : 'Your account is live. Job assignments and care reports will come later.') ?></span></div><?php endif; ?>
+            <?php if (in_array($page, ['overview', 'components'], true)): ?><div class="preview-banner" role="note"><?= icon('sparkle', 'size-4') ?><strong>Pilot progress</strong><span>Grave profiles and care requests are live. Photo evidence and condition reports come next.</span></div><?php endif; ?>
             <?php if ($page === 'cemeteries'): ?>
                 <?php require __DIR__ . '/pages/cemeteries.php'; ?>
             <?php elseif ($page === 'plots'): ?>
@@ -124,6 +124,12 @@ $pageTitle = match ($page) {
                 <?php require __DIR__ . '/pages/grave.php'; ?>
             <?php elseif ($page === 'grave-form'): ?>
                 <?php require __DIR__ . '/pages/grave-form.php'; ?>
+            <?php elseif ($page === 'requests'): ?>
+                <?php require __DIR__ . '/pages/requests.php'; ?>
+            <?php elseif ($page === 'request'): ?>
+                <?php require __DIR__ . '/pages/request.php'; ?>
+            <?php elseif ($page === 'request-new'): ?>
+                <?php require __DIR__ . '/pages/request-new.php'; ?>
             <?php elseif ($page === 'account'): ?>
                 <?php require __DIR__ . '/pages/account.php'; ?>
             <?php elseif ($isComponents): ?>

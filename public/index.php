@@ -10,6 +10,7 @@ require_once dirname(__DIR__) . '/app/security.php';
 require_once dirname(__DIR__) . '/app/auth.php';
 require_once dirname(__DIR__) . '/app/catalog.php';
 require_once dirname(__DIR__) . '/app/graves.php';
+require_once dirname(__DIR__) . '/app/requests.php';
 
 set_exception_handler(static function (Throwable $exception): void {
     error_log((string) $exception);
@@ -31,7 +32,7 @@ header('Cache-Control: no-store');
 
 start_secure_session();
 $page = $_GET['page'] ?? 'overview';
-if (!is_string($page) || !in_array($page, ['overview', 'components', 'account', 'caretakers', 'cemeteries', 'plots', 'services', 'families', 'graves', 'grave', 'grave-form', 'grave-photo', 'login', 'register', 'enroll'], true)) {
+if (!is_string($page) || !in_array($page, ['overview', 'components', 'account', 'caretakers', 'cemeteries', 'plots', 'services', 'families', 'graves', 'grave', 'grave-form', 'grave-photo', 'requests', 'request', 'request-new', 'login', 'register', 'enroll'], true)) {
     http_response_code(404);
     $errorTitle = 'Page not found';
     $errorMessage = 'The page you requested does not exist.';
@@ -58,6 +59,8 @@ $catalogErrors = [];
 $catalogValues = [];
 $graveErrors = [];
 $graveValues = [];
+$requestErrors = [];
+$requestValues = [];
 
 if ($page === 'grave-photo') {
     if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD'], true)) {
@@ -66,7 +69,7 @@ if ($page === 'grave-photo') {
         exit;
     }
     $photoId = catalog_id(isset($_GET['id']) && is_string($_GET['id']) ? $_GET['id'] : '');
-    if (!$user || $user['role'] !== 'family' || !grave_send_photo($photoId, (int) $user['id'])) {
+    if (!$user || !grave_send_photo($photoId, $user)) {
         http_response_code(404);
         $errorTitle = 'Photo not found';
         $errorMessage = 'The requested photo is unavailable.';
@@ -196,6 +199,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         set_flash('Reference photo removed.');
         redirect_to_grave($result['grave_id']);
+    } elseif ($action === 'create_request' && $user && $user['role'] === 'family') {
+        $page = 'request-new';
+        foreach (['grave_id', 'service_id', 'preferred_date', 'instructions', 'price_ack'] as $field) $requestValues[$field] = request_value($field);
+        $result = request_create($requestValues, $user);
+        if (isset($result['not_found'])) {
+            http_response_code(404);
+            $errorTitle = 'Grave not found';
+            $errorMessage = 'This grave profile is unavailable.';
+            require dirname(__DIR__) . '/app/views/error.php';
+            exit;
+        }
+        if (isset($result['id'])) {
+            set_flash('Care request submitted. The administrator can now assign a caretaker.');
+            header('Location: ?page=request&id=' . $result['id'], true, 303);
+            exit;
+        }
+        $requestErrors = $result['errors'];
+    } elseif ($action === 'request_transition' && $user) {
+        $requestId = catalog_id(request_value('request_id'));
+        $decision = request_value('decision');
+        $result = request_transition($requestId, $user, $decision, [
+            'caretaker_id' => request_value('caretaker_id'),
+            'note' => request_value('note'),
+            'confirmed' => request_value('confirmed'),
+            'headstone_name' => request_value('headstone_name'),
+            'section_code' => request_value('section_code'),
+            'lot_code' => request_value('lot_code'),
+        ]);
+        if (isset($result['not_found'])) {
+            http_response_code(404);
+            $errorTitle = 'Request not found';
+            $errorMessage = 'This care request is unavailable.';
+            require dirname(__DIR__) . '/app/views/error.php';
+            exit;
+        }
+        set_flash(isset($result['id']) ? 'Request updated: ' . request_status_label($result['status']) . '.' : $result['error'], isset($result['id']) ? 'success' : 'error');
+        header('Location: ' . ($decision === 'decline' && isset($result['id']) ? '?page=requests' : '?page=request&id=' . $requestId), true, 303);
+        exit;
     } else {
         http_response_code(403);
         $errorTitle = 'Action unavailable';
@@ -222,6 +263,13 @@ if (in_array($page, ['graves', 'grave', 'grave-form', 'grave-photo'], true) && $
     http_response_code(403);
     $errorTitle = 'Access denied';
     $errorMessage = 'Only family members can manage their grave profiles.';
+    require dirname(__DIR__) . '/app/views/error.php';
+    exit;
+}
+if ($page === 'request-new' && $user['role'] !== 'family') {
+    http_response_code(403);
+    $errorTitle = 'Access denied';
+    $errorMessage = 'Only family members can request care.';
     require dirname(__DIR__) . '/app/views/error.php';
     exit;
 }
@@ -273,9 +321,38 @@ if ($page === 'grave' || $page === 'grave-form') {
     if ($page === 'grave') {
         $gravePhotos = grave_photos((int) $grave['id']);
         $graveHistory = grave_history((int) $grave['id']);
+        $graveRequests = request_for_grave((int) $grave['id'], (int) $user['id']);
     } else {
         $graveCemeteries = catalog_cemeteries();
     }
+}
+if ($page === 'requests') $requests = request_list($user);
+if ($page === 'overview' && $role === 'caretaker') $caretakerRequests = request_list($user);
+if ($page === 'request-new') {
+    $rawGraveId = $requestValues['grave_id'] ?? (isset($_GET['grave_id']) && is_string($_GET['grave_id']) ? $_GET['grave_id'] : '');
+    $requestGrave = grave_find(catalog_id($rawGraveId), (int) $user['id']);
+    if (!$requestGrave) {
+        http_response_code(404);
+        $errorTitle = 'Grave not found';
+        $errorMessage = 'Choose one of your grave profiles to request care.';
+        require dirname(__DIR__) . '/app/views/error.php';
+        exit;
+    }
+    $availableServices = request_available_services((int) $requestGrave['cemetery_id']);
+}
+if ($page === 'request') {
+    $rawRequestId = isset($_GET['id']) && is_string($_GET['id']) ? $_GET['id'] : '';
+    $careRequest = request_find(catalog_id($rawRequestId), $user);
+    if (!$careRequest) {
+        http_response_code(404);
+        $errorTitle = 'Request not found';
+        $errorMessage = 'This care request is unavailable.';
+        require dirname(__DIR__) . '/app/views/error.php';
+        exit;
+    }
+    $requestHistory = request_events((int) $careRequest['id']);
+    if ($role === 'family' || ($role === 'caretaker' && $user['status'] === 'verified' && in_array($careRequest['status'], ['assigned', 'accepted', 'in_progress', 'awaiting_review'], true))) $requestReferencePhotos = grave_photos((int) $careRequest['grave_id']);
+    if ($role === 'admin' && $careRequest['status'] === 'requested') $requestCaretakers = request_candidates((int) $careRequest['cemetery_id']);
 }
 if ($page === 'overview' && $role === 'admin') {
     $accountStats = ['families' => 0, 'pending' => 0, 'verified' => 0, 'total' => 0];

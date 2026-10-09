@@ -207,13 +207,20 @@ function grave_remove_photo(int $photoId, int $familyId): array
     }
 }
 
-function grave_send_photo(int $photoId, int $familyId): bool
+function grave_send_photo(int $photoId, array $user): bool
 {
     if ($photoId < 1) return false;
-    $query = db()->prepare('SELECT p.storage_name, p.mime_type FROM grave_photos p JOIN grave_profiles g ON g.id = p.grave_id WHERE p.id = ? AND g.family_user_id = ? LIMIT 1');
-    $query->execute([$photoId, $familyId]);
+    $query = db()->prepare('SELECT p.storage_name, p.mime_type, p.grave_id, g.family_user_id FROM grave_photos p JOIN grave_profiles g ON g.id = p.grave_id WHERE p.id = ? LIMIT 1');
+    $query->execute([$photoId]);
     $photo = $query->fetch();
     if (!$photo || !preg_match('/^[a-f0-9]{48}$/', $photo['storage_name']) || !in_array($photo['mime_type'], ['image/jpeg', 'image/png', 'image/webp'], true)) return false;
+    $allowed = $user['role'] === 'family' && (int) $photo['family_user_id'] === (int) $user['id'];
+    if (!$allowed && $user['role'] === 'caretaker' && $user['status'] === 'verified') {
+        $access = db()->prepare("SELECT 1 FROM service_requests r JOIN caretaker_cemeteries a ON a.caretaker_id = r.caretaker_id AND a.cemetery_id = r.cemetery_id WHERE r.grave_id = ? AND r.caretaker_id = ? AND r.status IN ('assigned', 'accepted', 'in_progress', 'awaiting_review') LIMIT 1");
+        $access->execute([$photo['grave_id'], $user['id']]);
+        $allowed = (bool) $access->fetchColumn();
+    }
+    if (!$allowed) return false;
     $path = grave_photo_directory() . '/' . $photo['storage_name'];
     if (!is_file($path)) return false;
     header('Content-Type: ' . $photo['mime_type']);

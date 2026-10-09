@@ -8,4 +8,6 @@
 
 The design is included in `public/assets/app.css`; no npm or separate design server is needed to view the site.
 
+To try a care request, the administrator adds an active cemetery and service, then verifies a caretaker and grants cemetery access. A family registers a grave and opens **Request care** from its profile. The administrator assigns the request under **Care requests**, and the caretaker sees it under **Assigned jobs**.
+
 If you see a setup/database error, check `config/local.php` and confirm MySQL is running. If you see a 404, check the folder name and URL. If the login page appears without styling, check that `public/assets/app.css` exists. Do not open `index.php` directly from File Explorer; use the localhost URL.

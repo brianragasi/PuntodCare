@@ -83,6 +83,19 @@
     );
   });
 
+  const servicePicker = document.querySelector('[data-request-service]');
+  if (servicePicker) {
+    const price = document.querySelector('[data-request-price]');
+    const description = document.querySelector('[data-request-description]');
+    const updateService = () => {
+      const option = servicePicker.selectedOptions[0];
+      price.textContent = option?.dataset.price || 'Choose a service';
+      description.textContent = option?.dataset.description || 'See the work included before you submit.';
+    };
+    servicePicker.addEventListener('change', updateService);
+    updateService();
+  }
+
   const form = document.getElementById('sample-form');
   if (!form) return;
   const fieldMessages = {

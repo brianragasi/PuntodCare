@@ -98,14 +98,14 @@ try {
   await admin.page.locator('#service-price').fill('500.00');
   await admin.page.getByRole('button', { name: /add service/i }).click();
   await admin.page.waitForURL(/page=services/);
-  let serviceCard = admin.page.locator('.admin-record').filter({ hasText: 'Grave cleaning' });
+  let serviceCard = admin.page.locator('.admin-record').filter({ hasText: 'Grave cleaning' }).filter({ hasText: cemeteryName });
   assert.match(await serviceCard.textContent(), /₱500\.00/);
   assert.match(await serviceCard.textContent(), /Pilot estimate/);
   await serviceCard.getByRole('link', { name: /edit offering/i }).click();
   await admin.page.locator('#service-price').fill('550.00');
   await admin.page.getByRole('button', { name: /save changes/i }).click();
   await admin.page.waitForURL(/page=services/);
-  serviceCard = admin.page.locator('.admin-record').filter({ hasText: 'Grave cleaning' });
+  serviceCard = admin.page.locator('.admin-record').filter({ hasText: 'Grave cleaning' }).filter({ hasText: cemeteryName });
   assert.match(await serviceCard.textContent(), /₱550\.00/);
   await serviceCard.getByRole('link', { name: /edit offering/i }).click();
   assert.match(await admin.page.locator('.price-history').textContent(), /₱500\.00/);

@@ -47,6 +47,7 @@ function status_badge(string $label, string $type = 'neutral'): string
         'success' => 'badge badge-soft badge-success',
         'warning' => 'badge badge-soft badge-warning',
         'info' => 'badge badge-soft badge-info',
+        'error' => 'badge badge-soft badge-error',
     ];
     return '<span class="' . ($classes[$type] ?? $classes['neutral']) . ' status-badge">' . e($label) . '</span>';
 }

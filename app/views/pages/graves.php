@@ -1,5 +1,5 @@
 <div class="page-heading"><div><p class="eyebrow">FAMILY RECORDS</p><h1>My graves.</h1><p class="page-lead">Keep the names, location details, and reference photos your family needs in one private place.</p></div><a class="btn btn-primary btn-sm" href="?page=grave-form">Register a grave <?= icon('arrow', 'size-4') ?></a></div>
-<div class="review-intro" role="note"><?= icon('shield', 'size-5') ?><span>Only your signed-in family account can open these profiles and photos. Use the headstone name and section/lot details to identify the exact grave.</span></div>
+<div class="review-intro" role="note"><?= icon('shield', 'size-5') ?><span>Only your family account can open these profiles. An assigned, verified caretaker may view reference photos while a job is active. Use the headstone name and lot details to identify the exact grave.</span></div>
 <?php if (!$familyGraves): ?>
 <section class="surface-card grave-empty"><div class="next-illustration" aria-hidden="true"><?= icon('heart', 'size-10') ?></div><h2>No graves registered yet</h2><p>Start with the deceased person's name, the name on the headstone, and the cemetery location. You can add photos afterward.</p><a class="btn btn-primary" href="?page=grave-form">Register your first grave <?= icon('arrow', 'size-4') ?></a></section>
 <?php else: ?>

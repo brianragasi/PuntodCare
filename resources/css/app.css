@@ -509,3 +509,33 @@ h1, h2, h3, p { text-wrap: pretty; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+.request-price-panel { background: #f0f5ef; border: 1px solid #d8e7d8; border-radius: 13px; padding: 17px 20px; margin: 4px 0 6px; }
+.request-price-panel span { display: block; color: #55705e; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.request-price-panel strong { display: block; margin-top: 5px; color: #214936; font: 400 29px/1.2 Georgia, "Times New Roman", serif; }
+.request-price-panel p { margin: 8px 0 0; color: #58715e; font-size: 12px; line-height: 1.6; }
+.request-check { display: flex; align-items: flex-start; gap: 11px; margin: 16px 0 4px; font-size: 12px; line-height: 1.6; color: #44594c; cursor: pointer; }
+.request-check input { flex: none; width: 17px; height: 17px; margin-top: 2px; accent-color: #204d40; }
+.request-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.request-card { min-width: 0; }
+.request-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.request-card h2 { color: #244637; font: 400 25px/1.2 Georgia, "Times New Roman", serif; margin: 15px 0 6px; }
+.request-card-person { color: #65776a; font-size: 12px; margin: 0 0 17px; }
+.request-card-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; padding: 14px 0; margin: 0 0 15px; border-block: 1px solid #edf0ea; }
+.request-card-meta dt { color: #839084; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
+.request-card-meta dd { margin: 4px 0 0; color: #334a3b; font-size: 12px; font-weight: 600; }
+.request-card .small-link { display: inline-flex; }
+.request-status-banner { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; padding: 23px 25px; margin-bottom: 20px; color: #e9f3e7; background: linear-gradient(115deg, #214d3f, #38634e); border-radius: 16px; }
+.request-status-banner .eyebrow { color: #b9d5b9; }
+.request-status-banner h2 { color: #fff; font: 400 29px/1.2 Georgia, "Times New Roman", serif; margin: 7px 0; }
+.request-status-banner p { font-size: 12px; margin: 0; }
+.request-action-card > p { color: #667a6b; font-size: 12px; line-height: 1.65; margin: 4px 0 17px; }
+.request-action-form { display: grid; gap: 13px; margin-top: 12px; }
+.request-action-form .btn { justify-self: start; }
+.request-secondary-form { padding-top: 17px; border-top: 1px solid #edf0ea; margin-top: 21px; }
+.request-timeline p { margin: 8px 0 0; color: #52695a; font-size: 12px; line-height: 1.6; white-space: normal; overflow-wrap: anywhere; }
+.grave-details > .small-link { display: inline-flex; align-items: center; gap: 6px; }
+.request-links { display: grid; gap: 9px; margin-top: 15px; }
+.request-links a { color: #285642; font-size: 12px; font-weight: 600; }
+@media (max-width: 760px) { .request-card-grid { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .request-status-banner { flex-direction: column; padding: 20px; } .request-card-meta { grid-template-columns: 1fr 1fr; } }

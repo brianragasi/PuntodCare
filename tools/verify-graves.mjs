@@ -78,7 +78,7 @@ try {
   assert.match(await owner.page.locator('.grave-details').textContent(), /Maria T\. Family/);
   assert.match(await owner.page.locator('.grave-details').textContent(), /8\.4822000/);
   assert.match(await owner.page.locator('.grave-timeline').textContent(), /Grave profile registered/);
-  assert.match(await owner.page.locator('.grave-care-pending').textContent(), /No care reports yet/);
+  assert.match(await owner.page.locator('.grave-care-pending').textContent(), /No photo reports yet/);
   assert.equal(await owner.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
   await owner.page.screenshot({ path: path.resolve('storage/grave-mobile.png'), fullPage: true });
 
