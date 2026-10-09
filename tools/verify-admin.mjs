@@ -50,6 +50,14 @@ try {
   assert.equal(await cemeteryCard.count(), 1);
   await admin.page.screenshot({ path: path.resolve('storage/cemeteries-desktop.png'), fullPage: true });
 
+  await cemeteryCard.getByRole('link', { name: /edit details/i }).click();
+  await admin.page.locator('#cemetery-address').fill('<img src=x onerror="window.__puntodXss=true">');
+  await admin.page.getByRole('button', { name: /save changes/i }).click();
+  await admin.page.waitForURL(/page=cemeteries/);
+  cemeteryCard = admin.page.locator('.admin-record').filter({ hasText: cemeteryName });
+  assert.equal(await cemeteryCard.locator('img').count(), 0, 'cemetery address is rendered as text');
+  assert.equal(await admin.page.evaluate(() => window.__puntodXss), undefined);
+
   await admin.page.locator('#cemetery-name').fill(cemeteryName);
   await admin.page.locator('#cemetery-city').fill('Cagayan de Oro City');
   await admin.page.locator('#cemetery-province').fill('Misamis Oriental');

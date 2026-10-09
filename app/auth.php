@@ -7,14 +7,19 @@ function current_user(): ?array
     if (!is_int($id) || $id < 1) {
         return null;
     }
+    $now = time();
+    if (authenticated_session_expired($now)) {
+        clear_authenticated_session();
+        return null;
+    }
     $statement = db()->prepare('SELECT id, full_name, email, phone, role, status, password_hash, created_at FROM users WHERE id = ? LIMIT 1');
     $statement->execute([$id]);
     $user = $statement->fetch();
     if (!$user || $user['status'] === 'suspended' || !hash_equals(hash('sha256', $user['password_hash']), (string) ($_SESSION['password_fingerprint'] ?? ''))) {
-        unset($_SESSION['user_id']);
-        unset($_SESSION['password_fingerprint']);
+        clear_authenticated_session();
         return null;
     }
+    $_SESSION['last_activity_at'] = $now;
     unset($user['password_hash']);
     return $user;
 }
@@ -26,7 +31,7 @@ function login_user(int $id): void
     $passwordHash = $statement->fetchColumn();
     if (!is_string($passwordHash)) throw new RuntimeException('Account not found.');
     session_regenerate_id(true);
-    $_SESSION = ['user_id' => $id, 'password_fingerprint' => hash('sha256', $passwordHash), 'csrf_token' => bin2hex(random_bytes(32))];
+    $_SESSION = ['user_id' => $id, 'password_fingerprint' => hash('sha256', $passwordHash), 'csrf_token' => bin2hex(random_bytes(32)), 'authenticated_at' => time(), 'last_activity_at' => time()];
 }
 
 function logout_user(): void
@@ -49,6 +54,7 @@ function logout_user(): void
 function register_account(string $role, array $values): array
 {
     $errors = [];
+    if (!in_array($role, ['family', 'caretaker'], true)) return ['errors' => ['form' => 'This account type cannot be registered.']];
     $name = trim($values['full_name'] ?? '');
     $email = strtolower(trim($values['email'] ?? ''));
     $phone = trim($values['phone'] ?? '');

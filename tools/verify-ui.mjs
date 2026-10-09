@@ -14,6 +14,20 @@ const familyEmail = `family-${unique}@example.test`;
 const caretakerEmail = `caretaker-${unique}@example.test`;
 const familyPassword = 'Family-test-passphrase-2026';
 const caretakerPassword = 'Caretaker-test-passphrase-2026';
+const xssPayload = '<img src=x onerror="window.__puntodXss=true">';
+const sessionCheck = spawnSync('php', ['-r', `
+require 'app/security.php';
+$now = 100000;
+$_SESSION = ['user_id' => 1, 'authenticated_at' => $now - 100, 'last_activity_at' => $now - 1799];
+if (authenticated_session_expired($now)) exit(1);
+$_SESSION['last_activity_at'] = $now - 1800;
+if (!authenticated_session_expired($now)) exit(2);
+$_SESSION = ['user_id' => 1, 'authenticated_at' => $now - 28800, 'last_activity_at' => $now];
+if (!authenticated_session_expired($now)) exit(3);
+$_SESSION = ['user_id' => 1];
+if (!authenticated_session_expired($now)) exit(4);
+`], { encoding: 'utf8' });
+assert.equal(sessionCheck.status, 0, `session expiry checks failed: ${sessionCheck.stderr}`);
 const browser = await chromium.launch({ executablePath: chromePath, headless: true });
 const errors = [];
 
@@ -39,13 +53,22 @@ async function signOut(page) {
 
 try {
   const guest = await newPage({ width: 1440, height: 900 });
-  await guest.page.goto(baseUrl);
+  const loginResponse = await guest.page.goto(baseUrl);
   await guest.page.waitForURL(/page=login/);
   assert.equal(await guest.page.locator('h1').textContent(), 'Welcome back.');
+  const securityHeaders = loginResponse.headers();
+  assert.match(securityHeaders['content-security-policy'], /script-src 'self'/);
+  assert.equal(securityHeaders['x-frame-options'], 'DENY');
+  assert.equal(securityHeaders['x-content-type-options'], 'nosniff');
+  assert.equal(securityHeaders['referrer-policy'], 'strict-origin-when-cross-origin');
+  for (const privatePath of ['config/local.php', 'storage/admin-credentials.json', '.git/config']) {
+    const response = await guest.page.request.get(new URL(`../${privatePath}`, baseUrl).href);
+    assert.equal(response.status(), 403, `${privatePath} must be private`);
+  }
   await guest.page.screenshot({ path: path.resolve('storage/login-desktop.png'), fullPage: true });
 
   await guest.page.goto(`${baseUrl}?page=register`);
-  await guest.page.locator('#full_name').fill('Test Family');
+  await guest.page.locator('#full_name').fill(`Test Family ${xssPayload}`);
   await guest.page.locator('#email').fill(familyEmail);
   await guest.page.locator('#password').fill(familyPassword);
   await guest.page.locator('#password_confirmation').fill(familyPassword);
@@ -60,6 +83,8 @@ try {
   await guest.page.waitForURL(/page=overview/);
   assert.equal(await guest.page.locator('h1').textContent(), 'Always close in care.');
   assert.match(await guest.page.locator('.workspace-card').textContent(), /Test Family/);
+  assert.equal(await guest.page.locator('.workspace-card img').count(), 0, 'family name is rendered as text');
+  assert.equal(await guest.page.evaluate(() => window.__puntodXss), undefined);
   assert.equal(await guest.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
   await guest.page.goto(`${baseUrl}?role=admin&page=overview`);
   assert.equal(await guest.page.locator('h1').textContent(), 'Always close in care.', 'URL role does not change authority');
@@ -97,7 +122,7 @@ try {
   await caretaker.page.locator('#email').fill(caretakerEmail);
   await caretaker.page.locator('#phone').fill('09171234567');
   await caretaker.page.locator('#service_area').fill('Cagayan de Oro City');
-  await caretaker.page.locator('#experience').fill('Grave cleaning and photo documentation.');
+  await caretaker.page.locator('#experience').fill(`Grave cleaning and photo documentation. ${xssPayload}`);
   await caretaker.page.locator('#password').fill(caretakerPassword);
   await caretaker.page.locator('#password_confirmation').fill(caretakerPassword);
   await caretaker.page.getByRole('button', { name: /submit application/i }).click();
@@ -116,6 +141,8 @@ try {
   await admin.page.screenshot({ path: path.resolve('storage/admin-desktop.png'), fullPage: true });
   await admin.page.goto(`${baseUrl}?page=caretakers`);
   assert.match(await admin.page.locator('.review-card').first().textContent(), /Test Caretaker/);
+  assert.equal(await admin.page.locator('.review-card img').count(), 0, 'caretaker note is rendered as text');
+  assert.equal(await admin.page.evaluate(() => window.__puntodXss), undefined);
   const card = admin.page.locator('.review-card').filter({ hasText: caretakerEmail });
   await card.getByRole('button', { name: 'Verify caretaker' }).click();
   await admin.page.waitForURL(/page=caretakers/);
@@ -146,9 +173,12 @@ try {
   await admin.context.close();
 
   assert.deepEqual(errors, [], 'no browser script errors');
-  console.log('UI and account checks passed: registration, login, permissions, CSRF, caretaker review, suspension, mobile layout.');
+  console.log('UI and security checks passed: accounts, permissions, CSRF, XSS payloads, response headers, session expiry, and mobile layout.');
 } finally {
   await browser.close();
   const cleanup = spawnSync('php', ['tools/cleanup-test-users.php', familyEmail, caretakerEmail], { encoding: 'utf8' });
-  if (cleanup.status !== 0) console.error(cleanup.stderr || 'Test account cleanup failed.');
+  if (cleanup.status !== 0) {
+    console.error(cleanup.stderr || 'Test account cleanup failed.');
+    process.exitCode = 1;
+  }
 }

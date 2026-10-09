@@ -1,6 +1,9 @@
 <?php
 declare(strict_types=1);
 
+const SESSION_IDLE_SECONDS = 1800;
+const SESSION_ABSOLUTE_SECONDS = 28800;
+
 function start_secure_session(): void
 {
     if (session_status() === PHP_SESSION_ACTIVE) {
@@ -19,6 +22,23 @@ function start_secure_session(): void
         'samesite' => 'Lax',
     ]);
     session_start();
+}
+
+function authenticated_session_expired(int $now): bool
+{
+    if (!isset($_SESSION['user_id'])) return false;
+    $started = $_SESSION['authenticated_at'] ?? null;
+    $lastActivity = $_SESSION['last_activity_at'] ?? null;
+    return !is_int($started) || !is_int($lastActivity)
+        || $started > $now || $lastActivity > $now
+        || $now - $started >= SESSION_ABSOLUTE_SECONDS
+        || $now - $lastActivity >= SESSION_IDLE_SECONDS;
+}
+
+function clear_authenticated_session(): void
+{
+    session_regenerate_id(true);
+    $_SESSION = [];
 }
 
 function csrf_token(): string

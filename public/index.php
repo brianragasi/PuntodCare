@@ -1,16 +1,29 @@
 <?php
 declare(strict_types=1);
 
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+
 require_once dirname(__DIR__) . '/app/helpers.php';
 require_once dirname(__DIR__) . '/app/database.php';
 require_once dirname(__DIR__) . '/app/security.php';
 require_once dirname(__DIR__) . '/app/auth.php';
 require_once dirname(__DIR__) . '/app/catalog.php';
 
+set_exception_handler(static function (Throwable $exception): void {
+    error_log((string) $exception);
+    http_response_code(500);
+    $errorTitle = 'Something went wrong';
+    $errorMessage = 'Please try again later.';
+    require dirname(__DIR__) . '/app/views/error.php';
+});
+
 $config = require dirname(__DIR__) . '/config/app.php';
 date_default_timezone_set($config['timezone']);
 
+header('Content-Type: text/html; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header("Content-Security-Policy: default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
 header('Cache-Control: no-store');

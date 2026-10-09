@@ -1,5 +1,7 @@
 Options -Indexes
 <IfModule mod_headers.c>
+Header onsuccess unset X-Content-Type-Options
 Header always set X-Content-Type-Options "nosniff"
+Header onsuccess unset Referrer-Policy
 Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
