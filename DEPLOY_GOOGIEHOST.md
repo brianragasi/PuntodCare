@@ -6,6 +6,8 @@ GoogieHost provides PHP 8.x, MySQL/phpMyAdmin, SSL, and a DirectAdmin panel. The
 
 In GoogieHost DirectAdmin, open **Advanced Features → Git** if available. Add remote `https://github.com/brianragasi/PuntodCare.git`, select branch `main`, and set the deploy directory to the domain's **existing** `domains/YOUR-DOMAIN/public_html` directory (relative to your hosting home). Deploy once. The result must place `index.php`, `app/`, `config/`, `database/`, and `public/` directly inside `public_html`, not inside a second `PuntodCare` folder. The site's root URL then redirects to `/public/`.
 
+If GoogieHost left a default `index.html` page in `public_html`, remove that placeholder after confirming the repository files deployed; otherwise it may appear instead of Puntod Care's `index.php`.
+
 If DirectAdmin shows a webhook URL for this repository, copy that exact URL. In GitHub, open this repository's **Settings → Webhooks → Add webhook**, paste the URL, use the content type and secret required by DirectAdmin, and select the **push** event. Keep SSL verification enabled. Check the GitHub webhook delivery and DirectAdmin deploy log after a test push. [DirectAdmin documents](https://docs.directadmin.com/other-hosting-services/git/) that automated fetch and deploy require a valid deploy branch and directory. [GitHub's webhook guide](https://docs.github.com/en/webhooks/using-webhooks/creating-webhooks) explains the Settings screen.
 
 The compiled CSS is already in the repository, so the host does not need Node or npm. Once the webhook works, reviewed pushes to `main` update application code on the live site.
