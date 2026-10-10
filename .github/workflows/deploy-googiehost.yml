@@ -22,7 +22,7 @@ jobs:
       FTP_HOST: cloud3.googiehost.com
       FTP_USER: ${{ secrets.GOOGIEHOST_FTP_USER }}
       FTP_PASSWORD: ${{ secrets.GOOGIEHOST_FTP_PASSWORD }}
-      FTP_REMOTE_DIR: ${{ vars.GOOGIEHOST_FTP_REMOTE_DIR }}
+      FTP_REMOTE_DIR: .
     steps:
       - name: Check out pushed commit
         uses: actions/checkout@v4
@@ -51,17 +51,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for name in FTP_USER FTP_PASSWORD FTP_REMOTE_DIR; do
+          for name in FTP_USER FTP_PASSWORD; do
             if [[ -z "${!name}" ]]; then
               echo "Missing $name. See DEPLOY_GOOGIEHOST.md." >&2
               exit 1
             fi
           done
-          if [[ ! "$FTP_REMOTE_DIR" =~ ^[A-Za-z0-9_./-]+$ ]] ||
-             [[ "$FTP_REMOTE_DIR" == *..* ]]; then
-            echo 'Invalid FTP target directory.' >&2
-            exit 1
-          fi
 
       - name: Upload application over encrypted FTP
         shell: bash
