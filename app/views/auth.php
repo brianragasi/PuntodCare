@@ -6,11 +6,11 @@ $intro = $isLogin ? 'Sign in to your Puntod Care account.' : ($isCaretaker ? 'Ap
 ?>
 <!doctype html>
 <html lang="en" data-theme="puntod">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#183b33"><title><?= e($heading) ?> · Puntod Care</title><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="assets/app.css"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0b1f4b"><title><?= e($heading) ?> · Puntod Care</title><link rel="icon" href="<?= e(asset_url('brand-icon.png')) ?>" type="image/png"><link rel="stylesheet" href="<?= e(asset_url('app.css')) ?>"></head>
 <body class="auth-page">
 <a class="skip-link" href="#auth-main">Skip to form</a>
 <div class="auth-shell">
-    <aside class="auth-story"><a href="?page=login" class="brand-link auth-brand"><span class="brand-mark"><?= icon('flower', 'size-6') ?></span><span class="brand-type">puntod<span>care</span><small>Care that stays close</small></span></a><div class="auth-story-content"><span class="hero-kicker"><span class="hero-kicker-dot"></span> CARE FROM WHEREVER YOU ARE</span><h2>Love remembers.<br><em>Care continues.</em></h2><p>A thoughtful place for Filipino families and trusted local caretakers to care for a loved one's resting place.</p><div class="auth-story-mark" aria-hidden="true"><?= icon('flower', 'size-14') ?></div></div><span class="auth-story-footer">PUNTOD CARE · PILOT EXPERIENCE</span></aside>
+    <aside class="auth-story"><a href="?page=login" class="auth-brand" aria-label="Puntod Care home"><picture><source media="(max-width: 900px)" srcset="<?= e(asset_url('brand-header.png')) ?>"><img src="<?= e(asset_url('brand-logo.png')) ?>" width="1600" height="1600" alt=""></picture></a><div class="auth-story-content"><span class="hero-kicker"><span class="hero-kicker-dot"></span> CARE FROM WHEREVER YOU ARE</span><h2>Love remembers.<br><em>Care continues.</em></h2><p>A thoughtful place for Filipino families and trusted local caretakers to care for a loved one's resting place.</p></div><span class="auth-story-footer">PUNTOD CARE · PILOT EXPERIENCE</span></aside>
     <main id="auth-main" class="auth-main"><div class="auth-card"><p class="eyebrow"><?= $isLogin ? 'YOUR ACCOUNT' : ($isCaretaker ? 'CARETAKER APPLICATION' : 'FAMILY REGISTRATION') ?></p><h1><?= e($heading) ?></h1><p class="auth-intro"><?= e($intro) ?></p>
         <?php if ($authError !== ''): ?><div class="alert auth-error" role="alert"><?= icon('close', 'size-4') ?><span><?= e($authError) ?></span></div><?php endif; ?>
         <?php if (!$isLogin && $isCaretaker): ?><div class="alert auth-info" role="note"><?= icon('shield', 'size-4') ?><span>Your application starts as pending. An administrator must verify you before you can receive work.</span></div><?php endif; ?>
@@ -33,5 +33,5 @@ $intro = $isLogin ? 'Sign in to your Puntod Care account.' : ($isCaretaker ? 'Ap
         <div class="auth-links"><?php if ($isLogin): ?><p>New to Puntod Care? <a href="?page=register">Create a family account</a></p><p>Want to offer care? <a href="?page=enroll">Apply as a caretaker</a></p><?php else: ?><p>Already have an account? <a href="?page=login">Sign in</a></p><?php if (!$isCaretaker): ?><p>Are you a caretaker? <a href="?page=enroll">Apply here</a></p><?php endif; ?><?php endif; ?></div>
     </div></main>
 </div>
-<script src="assets/app.js" defer></script>
+<script src="<?= e(asset_url('app.js')) ?>" defer></script>
 </body></html>

@@ -6,6 +6,17 @@ function e(string $value): string
     return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
+function asset_url(string $name): string
+{
+    if (!preg_match('/\A[a-z0-9][a-z0-9.-]*\z/i', $name)) {
+        throw new InvalidArgumentException('Invalid asset name.');
+    }
+
+    $path = dirname(__DIR__) . '/public/assets/' . $name;
+    $modified = is_file($path) ? filemtime($path) : false;
+    return 'assets/' . rawurlencode($name) . '?v=' . ($modified === false ? '0' : (string) $modified);
+}
+
 function app_url(string $role, string $page = 'overview'): string
 {
     // The role parameter remains for Phase 1 view compatibility. The server

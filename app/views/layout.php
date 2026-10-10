@@ -30,12 +30,12 @@ $pageTitle = match ($page) {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#183b33">
+    <meta name="theme-color" content="#0b1f4b">
     <meta name="description" content="Puntod Care keeps families connected to the resting places of their loved ones.">
     <title><?= e($pageTitle) ?> · Puntod Care</title>
-    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="assets/app.css">
-    <script src="assets/app.js" defer></script>
+    <link rel="icon" href="<?= e(asset_url('brand-icon.png')) ?>" type="image/png">
+    <link rel="stylesheet" href="<?= e(asset_url('app.css')) ?>">
+    <script src="<?= e(asset_url('app.js')) ?>" defer></script>
 </head>
 <body class="min-h-screen bg-base-200 text-base-content">
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -44,8 +44,7 @@ $pageTitle = match ($page) {
     <aside class="sidebar" id="site-sidebar" aria-label="Main navigation">
         <div class="sidebar-brand">
             <a href="<?= e(app_url($role)) ?>" class="brand-link" aria-label="Puntod Care home">
-                <span class="brand-mark"><?= icon('flower', 'size-6') ?></span>
-                <span class="brand-type">puntod<span>care</span><small>Care that stays close</small></span>
+                <span class="brand-header"><img src="<?= e(asset_url('brand-header.png')) ?>" width="1920" height="560" alt=""></span>
             </a>
             <button class="btn btn-ghost btn-square lg:hidden" type="button" aria-label="Close navigation" data-sidebar-close-button><?= icon('close') ?></button>
         </div>
@@ -96,6 +95,7 @@ $pageTitle = match ($page) {
         <header class="topbar">
             <div class="topbar-left">
                 <button class="btn btn-ghost btn-square mobile-menu lg:hidden" type="button" aria-label="Open navigation" aria-controls="site-sidebar" aria-expanded="false" data-sidebar-open><?= icon('menu') ?></button>
+                <span class="mobile-brand-icon" aria-hidden="true"><img src="<?= e(asset_url('brand-icon.png')) ?>" width="1024" height="1024" alt=""></span>
                 <span class="breadcrumb-root">Puntod Care</span>
                 <?= icon('chevron', 'size-3.5 breadcrumb-chevron') ?>
                 <span class="breadcrumb-current"><?= e($pageTitle) ?></span>
