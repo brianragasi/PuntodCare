@@ -29,6 +29,17 @@ async function register(page, url, values, buttonName) {
   await page.waitForURL(/page=overview/);
 }
 
+async function submitWithForgedInactiveStatus(page, buttonName) {
+  await page.locator('form.admin-form').evaluate((form) => {
+    const field = document.createElement('input');
+    field.type = 'hidden';
+    field.name = 'status';
+    field.value = 'inactive';
+    form.append(field);
+  });
+  await page.getByRole('button', { name: buttonName }).click();
+}
+
 try {
   const admin = await contextWithPage();
   await admin.page.goto(`${baseUrl}?page=login`);
@@ -38,17 +49,21 @@ try {
   await admin.page.waitForURL(/page=overview/);
 
   await admin.page.goto(`${baseUrl}?page=cemeteries`);
+  assert.equal(await admin.page.locator('#cemetery-status').count(), 0, 'new cemetery has no status control');
+  assert.match(await admin.page.locator('#cemetery-form-title').textContent(), /Add a cemetery/);
   await admin.page.locator('#cemetery-name').fill(cemeteryName);
   await admin.page.locator('#cemetery-city').fill('Cagayan de Oro City');
   await admin.page.locator('#cemetery-province').fill('Misamis Oriental');
   await admin.page.locator('#cemetery-address').fill('Pilot gate, north entrance');
-  await admin.page.getByRole('button', { name: /add cemetery/i }).click();
+  await submitWithForgedInactiveStatus(admin.page, /add cemetery/i);
   await admin.page.waitForURL(/page=cemeteries/);
   let cemeteryCard = admin.page.locator('.admin-record').filter({ hasText: cemeteryName });
   assert.equal(await cemeteryCard.count(), 1);
+  assert.match(await cemeteryCard.locator('.badge').textContent(), /Active/, 'new cemetery starts active despite forged status');
   await admin.page.screenshot({ path: path.resolve('storage/cemeteries-desktop.png'), fullPage: true });
 
   await cemeteryCard.getByRole('link', { name: /edit details/i }).click();
+  assert.equal(await admin.page.locator('#cemetery-status').count(), 1, 'status is available when editing a cemetery');
   await admin.page.locator('#cemetery-address').fill('<img src=x onerror="window.__puntodXss=true">');
   await admin.page.getByRole('button', { name: /save changes/i }).click();
   await admin.page.waitForURL(/page=cemeteries/);
@@ -61,9 +76,12 @@ try {
   await admin.page.locator('#cemetery-province').fill('Misamis Oriental');
   await admin.page.getByRole('button', { name: /add cemetery/i }).click();
   assert.match(await admin.page.locator('#cemetery-name + .field-error').textContent(), /already exists/i, 'duplicate cemetery rejected');
+  assert.match(await admin.page.locator('#cemetery-form-title').textContent(), /Add a cemetery/, 'creation error stays in creation mode');
+  assert.equal(await admin.page.locator('#cemetery-status').count(), 0);
   await admin.page.goto(`${baseUrl}?page=cemeteries`);
 
   await admin.page.goto(`${baseUrl}?page=plots`);
+  assert.equal(await admin.page.locator('#plot-status').count(), 0, 'new plot has no status control');
   const cemeteryId = await admin.page.locator('#plot-cemetery option').filter({ hasText: cemeteryName }).getAttribute('value');
   assert.ok(cemeteryId);
   await admin.page.locator('#plot-cemetery').selectOption(cemeteryId);
@@ -72,10 +90,14 @@ try {
   await admin.page.locator('#plot-row').fill('Row 3');
   await admin.page.locator('#plot-lot').fill('Lot 12');
   await admin.page.locator('#plot-landmark').fill('Near the east gate');
-  await admin.page.getByRole('button', { name: /add plot reference/i }).click();
+  await submitWithForgedInactiveStatus(admin.page, /add plot reference/i);
   await admin.page.waitForURL(/page=plots/);
   let plotCard = admin.page.locator('.admin-record').filter({ hasText: 'Section Garden A · Lot Lot 12' });
   assert.equal(await plotCard.count(), 1);
+  assert.match(await plotCard.locator('.badge').textContent(), /Active/, 'new plot starts active despite forged status');
+  await plotCard.getByRole('link', { name: /edit reference/i }).click();
+  assert.equal(await admin.page.locator('#plot-status').count(), 1, 'status is available when editing a plot');
+  await admin.page.goto(`${baseUrl}?page=plots`);
   await admin.page.locator('#plot-cemetery').selectOption(cemeteryId);
   await admin.page.locator('#plot-section').fill('Garden A');
   await admin.page.locator('#plot-block').fill('Block 2');
@@ -83,23 +105,30 @@ try {
   await admin.page.locator('#plot-lot').fill('Lot 12');
   await admin.page.getByRole('button', { name: /add plot reference/i }).click();
   assert.match(await admin.page.locator('#plot-lot + .field-error').textContent(), /already has/i, 'duplicate plot rejected');
+  assert.match(await admin.page.locator('#plot-form-title').textContent(), /Add a plot/, 'creation error stays in creation mode');
+  assert.equal(await admin.page.locator('#plot-status').count(), 0);
   await admin.page.goto(`${baseUrl}?page=plots&q=Garden+A`);
   assert.equal(await admin.page.locator('.admin-record').count(), 1, 'plot search works');
 
   await admin.page.goto(`${baseUrl}?page=services`);
+  assert.equal(await admin.page.locator('#service-status').count(), 0, 'new service has no availability control');
   await admin.page.locator('#service-cemetery').selectOption(cemeteryId);
   await admin.page.locator('#service-name').fill('Grave cleaning');
   await admin.page.locator('#service-description').fill('Cleaning and before-and-after photos.');
   await admin.page.locator('#service-price').fill('0');
   await admin.page.getByRole('button', { name: /add service/i }).click();
   assert.match(await admin.page.locator('#service-price + .field-error').textContent(), /price in pesos/i, 'invalid price rejected');
+  assert.match(await admin.page.locator('#service-form-title').textContent(), /Add a service/, 'creation error stays in creation mode');
+  assert.equal(await admin.page.locator('#service-status').count(), 0);
   await admin.page.locator('#service-price').fill('500.00');
-  await admin.page.getByRole('button', { name: /add service/i }).click();
+  await submitWithForgedInactiveStatus(admin.page, /add service/i);
   await admin.page.waitForURL(/page=services/);
   let serviceCard = admin.page.locator('.admin-record').filter({ hasText: 'Grave cleaning' }).filter({ hasText: cemeteryName });
+  assert.match(await serviceCard.locator('.badge').textContent(), /Active/, 'new service starts active despite forged status');
   assert.match(await serviceCard.textContent(), /₱500\.00/);
   assert.match(await serviceCard.textContent(), /Pilot estimate/);
   await serviceCard.getByRole('link', { name: /edit offering/i }).click();
+  assert.equal(await admin.page.locator('#service-status').count(), 1, 'availability is available when editing a service');
   await admin.page.locator('#service-price').fill('550.00');
   await admin.page.getByRole('button', { name: /save changes/i }).click();
   await admin.page.waitForURL(/page=services/);

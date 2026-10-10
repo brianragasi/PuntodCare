@@ -83,7 +83,7 @@ function catalog_save_cemetery(array $values, int $actorId): array
     $city = trim($values['city'] ?? '');
     $province = trim($values['province'] ?? '');
     $address = trim($values['address'] ?? '');
-    $status = $values['status'] ?? 'active';
+    $status = $id ? ($values['status'] ?? 'active') : 'active';
     $errors = [];
     if (($values['id'] ?? '') !== '' && !$id) $errors['form'] = 'Choose a valid cemetery record.';
     if (mb_strlen($name) < 2 || mb_strlen($name) > 120) $errors['name'] = 'Enter a cemetery name (2–120 characters).';
@@ -131,7 +131,7 @@ function catalog_save_plot(array $values, int $actorId): array
     $row = trim($values['row_code'] ?? '');
     $lot = trim($values['lot_code'] ?? '');
     $landmark = trim($values['landmark'] ?? '');
-    $status = $values['status'] ?? 'active';
+    $status = $id ? ($values['status'] ?? 'active') : 'active';
     $errors = [];
     if (($values['id'] ?? '') !== '' && !$id) $errors['form'] = 'Choose a valid plot reference.';
     if (!$cemeteryId || !catalog_record('cemetery', $cemeteryId)) $errors['cemetery_id'] = 'Choose a cemetery.';
@@ -179,7 +179,7 @@ function catalog_save_service(array $values, int $actorId): array
     $name = trim($values['name'] ?? '');
     $description = trim($values['description'] ?? '');
     $price = catalog_price_centavos(trim($values['price'] ?? ''));
-    $status = $values['status'] ?? 'active';
+    $status = $id ? ($values['status'] ?? 'active') : 'active';
     $errors = [];
     if (($values['id'] ?? '') !== '' && !$id) $errors['form'] = 'Choose a valid service offering.';
     if (!$cemeteryId || !catalog_record('cemetery', $cemeteryId)) $errors['cemetery_id'] = 'Choose a cemetery.';
