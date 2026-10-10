@@ -1,0 +1,116 @@
+name: Deploy to GoogieHost
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: puntodcare-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://puntodcare.whf.bz/
+    env:
+      FTP_HOST: cloud3.googiehost.com
+      FTP_USER: ${{ secrets.GOOGIEHOST_FTP_USER }}
+      FTP_PASSWORD: ${{ secrets.GOOGIEHOST_FTP_PASSWORD }}
+      FTP_REMOTE_DIR: ${{ vars.GOOGIEHOST_FTP_REMOTE_DIR }}
+    steps:
+      - name: Check out pushed commit
+        uses: actions/checkout@v4
+
+      - name: Install deployment tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lftp php-cli php-zip unzip
+
+      - name: Build and check application files
+        shell: bash
+        run: |
+          set -euo pipefail
+          php tools/build-hosting-files.php
+          mkdir -p deploy
+          unzip -q storage/PuntodCare-GoogieHost.zip -d deploy
+          test -f deploy/.htaccess
+          test -f deploy/index.php
+          test -f deploy/public/index.php
+          test -f deploy/public/assets/app.css
+          test ! -e deploy/config/local.php
+          test ! -e deploy/storage
+          find deploy -name '*.php' -print0 | xargs -0 -n1 php -l >/dev/null
+
+      - name: Check deployment settings
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in FTP_USER FTP_PASSWORD FTP_REMOTE_DIR; do
+            if [[ -z "${!name}" ]]; then
+              echo "Missing $name. See DEPLOY_GOOGIEHOST.md." >&2
+              exit 1
+            fi
+          done
+          if [[ ! "$FTP_REMOTE_DIR" =~ ^[A-Za-z0-9_./-]+$ ]] ||
+             [[ "$FTP_REMOTE_DIR" == *..* ]]; then
+            echo 'Invalid FTP target directory.' >&2
+            exit 1
+          fi
+
+      - name: Upload application over encrypted FTP
+        shell: bash
+        run: |
+          set -euo pipefail
+          lftp -u "$FTP_USER,$FTP_PASSWORD" -p 21 "ftp://$FTP_HOST" -e "
+            set cmd:fail-exit yes;
+            set ftp:ssl-force yes;
+            set ftp:ssl-protect-data yes;
+            set ftp:passive-mode yes;
+            set ftp:list-options -a;
+            set ssl:verify-certificate yes;
+            set net:max-retries 2;
+            set net:timeout 20;
+            cd $FTP_REMOTE_DIR;
+            get index.php -o /tmp/puntodcare-remote-index.php;
+            bye
+          "
+          if ! grep -Fq 'Location: public/' /tmp/puntodcare-remote-index.php; then
+            echo 'FTP target is not the Puntod Care public_html directory.' >&2
+            exit 1
+          fi
+          lftp -u "$FTP_USER,$FTP_PASSWORD" -p 21 "ftp://$FTP_HOST" -e "
+            set cmd:fail-exit yes;
+            set ftp:ssl-force yes;
+            set ftp:ssl-protect-data yes;
+            set ftp:passive-mode yes;
+            set ftp:list-options -a;
+            set ssl:verify-certificate yes;
+            set net:max-retries 2;
+            set net:timeout 20;
+            cd $FTP_REMOTE_DIR;
+            mirror --reverse --delete --verbose --parallel=2 deploy/app app;
+            mirror --reverse --delete --verbose --parallel=2 deploy/public public;
+            mirror --reverse --verbose deploy/config config;
+            put deploy/.htaccess -o .htaccess;
+            put deploy/index.php -o index.php;
+            bye
+          "
+
+      - name: Verify live site
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --retry 3 --retry-delay 3 \
+            --max-time 30 -o /dev/null https://puntodcare.whf.bz/
+          curl --fail --silent --show-error --retry 3 --retry-delay 3 \
+            --max-time 30 "https://puntodcare.whf.bz/public/assets/app.js?rev=$GITHUB_SHA" \
+            | cmp - deploy/public/assets/app.js
+          curl --fail --silent --show-error --retry 3 --retry-delay 3 \
+            --max-time 30 "https://puntodcare.whf.bz/public/assets/app.css?rev=$GITHUB_SHA" \
+            | cmp - deploy/public/assets/app.css

@@ -11,11 +11,18 @@ From the project directory, run `php tools/build-hosting-files.php`. It creates 
 
 The compiled CSS is included in the ZIP. GoogieHost does not need Node.js or npm.
 
-## 2. Upload the website
+## 2. Publish automatically from GitHub main
 
-In DirectAdmin **File Manager**, open `domains/puntodcare.whf.bz/public_html`. Upload `storage/PuntodCare-GoogieHost.zip` there and extract it **in that directory**. `index.php`, `.htaccess`, `app/`, `config/`, and `public/` must be directly inside `public_html`, without a second `PuntodCare` folder. Remove the default `index.html` placeholder if it takes precedence over Puntod Care's `index.php`. Delete the uploaded ZIP after extraction.
+The repository has a GitHub Actions workflow at `.github/workflows/deploy-googiehost.yml`. It runs on every push to `main`, builds the same application-only ZIP described above, uploads its contents over encrypted FTP, and checks the live page and assets. It never uploads the database, `config/local.php`, `storage/`, or photos. It syncs deletions inside `app/` and `public/` only; other host files are left alone.
 
-The dashboard screenshot did not show Git Manager. Until a Git deployment integration or another secure deployment method is configured and tested, **pushing to GitHub does not update GoogieHost**. For each code update, rebuild the ZIP and replace the application files in `public_html`. Keep the private directory in step 3 untouched.
+One-time setup:
+
+1. In DirectAdmin **FTP Management**, find the FTP username, or create an FTP account scoped to `domains/puntodcare.whf.bz/public_html` if your plan allows one. Use that account's FTP password, **not** the MySQL password. The workflow connects to `cloud3.googiehost.com` because that is the hostname on this server's FTP TLS certificate. It refuses an unencrypted connection.
+2. In the GitHub repository, open **Settings → Secrets and variables → Actions**. Create repository secrets `GOOGIEHOST_FTP_USER` and `GOOGIEHOST_FTP_PASSWORD` with those FTP values. Do not put credentials in Git-tracked files.
+3. On the same GitHub page, create the repository **variable** `GOOGIEHOST_FTP_REMOTE_DIR`. Use the path *as seen by that FTP account*: normally `domains/puntodcare.whf.bz/public_html` for an account rooted at the hosting home, or `.` for an account rooted directly at `public_html`. Confirm the location through DirectAdmin FTP Management or an FTP client. The workflow uploads files directly into this directory, so the correct value matters.
+4. Open **Actions → Deploy to GoogieHost → Run workflow** once. Check that the `deploy` job succeeds and that `https://puntodcare.whf.bz/` works. After that, each push to `main` runs the same deployment automatically. A failed job means the live site may still have the previous version; review the job log before another push.
+
+Keep `index.php`, `.htaccess`, `app/`, `config/`, and `public/` directly in `public_html`. The private directory in step 3 must remain beside `public_html`, never inside it. The old manual upload ZIP can be removed from `public_html` after the automated deployment succeeds.
 
 ## 3. Add the live database configuration
 
