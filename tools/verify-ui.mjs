@@ -80,6 +80,8 @@ try {
   await guest.page.getByRole('button', { name: /create family account/i }).click();
   await guest.page.waitForURL(/page=overview/);
   assert.equal(await guest.page.locator('h1').textContent(), 'Always close in care.');
+  assert.doesNotMatch(await guest.page.locator('.sidebar-nav').textContent(), /Interface kit|Condition reports|later phases/i);
+  assert.equal(await guest.page.locator('.preview-banner').count(), 0);
   assert.match(await guest.page.locator('.workspace-card').textContent(), /Test Family/);
   assert.equal(await guest.page.locator('.workspace-card img').count(), 0, 'family name is rendered as text');
   assert.equal(await guest.page.evaluate(() => window.__puntodXss), undefined);
@@ -136,6 +138,7 @@ try {
   const admin = await newPage({ width: 1440, height: 900 });
   await signIn(admin.page, adminEmail, adminPassword);
   assert.equal(await admin.page.locator('h1').textContent(), 'Good day, administrator.');
+  assert.doesNotMatch(await admin.page.locator('.sidebar-nav').textContent(), /Interface kit|Condition reports|later phases/i);
   await admin.page.screenshot({ path: path.resolve('storage/admin-desktop.png'), fullPage: true });
   await admin.page.goto(`${baseUrl}?page=caretakers`);
   assert.match(await admin.page.locator('.review-card').first().textContent(), /Test Caretaker/);
@@ -147,6 +150,7 @@ try {
   assert.match(await card.textContent(), /Verified/);
   await caretaker.page.reload();
   assert.equal(await caretaker.page.locator('.caretaker-status-note').count(), 0, 'verified caretaker sees updated status');
+  assert.doesNotMatch(await caretaker.page.locator('.sidebar-nav').textContent(), /Interface kit|Condition reports|later phases/i);
   await caretaker.page.goto(`${baseUrl}?page=account`);
   assert.match(await caretaker.page.locator('main').textContent(), /Verified/);
 
@@ -160,14 +164,9 @@ try {
   await signIn(caretaker.page, caretakerEmail, caretakerPassword);
   await caretaker.context.close();
 
-  await admin.page.goto(`${baseUrl}?page=components`);
-  await admin.page.getByRole('button', { name: /check example form/i }).click();
-  assert.equal(await admin.page.locator('#sample-name-error').textContent(), 'Enter a name with at least 2 characters.');
-  await admin.page.locator('#sample-name').fill('Maria Dela Cruz');
-  await admin.page.locator('#sample-email').fill('maria@example.com');
-  await admin.page.locator('#sample-service').selectOption('inspection');
-  await admin.page.getByRole('button', { name: /check example form/i }).click();
-  assert.match(await admin.page.locator('#form-result').textContent(), /does not save information/i);
+  const retiredKit = await admin.page.goto(`${baseUrl}?page=components`);
+  assert.equal(retiredKit?.status(), 404, 'retired interface kit is not served');
+  assert.match(await admin.page.locator('h1').textContent(), /Page not found/i);
   await admin.context.close();
 
   assert.deepEqual(errors, [], 'no browser script errors');

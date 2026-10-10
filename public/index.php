@@ -34,7 +34,7 @@ header('Cache-Control: no-store');
 
 start_secure_session();
 $page = $_GET['page'] ?? 'overview';
-if (!is_string($page) || !in_array($page, ['overview', 'components', 'account', 'caretakers', 'cemeteries', 'plots', 'services', 'families', 'graves', 'grave', 'grave-form', 'grave-photo', 'requests', 'request', 'request-new', 'request-evidence', 'updates', 'login', 'register', 'enroll'], true)) {
+if (!is_string($page) || !in_array($page, ['overview', 'account', 'caretakers', 'cemeteries', 'plots', 'services', 'families', 'graves', 'grave', 'grave-form', 'grave-photo', 'requests', 'request', 'request-new', 'request-evidence', 'updates', 'login', 'register', 'enroll'], true)) {
     http_response_code(404);
     $errorTitle = 'Page not found';
     $errorMessage = 'The page you requested does not exist.';

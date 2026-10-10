@@ -1,14 +1,12 @@
 <?php
 declare(strict_types=1);
 
-$isComponents = $page === 'components';
 $overviewTitle = match ($role) {
     'family' => 'Family overview',
     'caretaker' => 'Your work',
     default => 'Overview',
 };
 $pageTitle = match ($page) {
-    'components' => 'Interface kit',
     'account' => 'My account',
     'caretakers' => 'Caretaker review',
     'cemeteries' => 'Cemeteries',
@@ -75,9 +73,6 @@ $pageTitle = match ($page) {
                 <?php endif; ?>
                 <a href="?page=updates" class="nav-link<?= $page === 'updates' ? ' is-active' : '' ?>" <?= $page === 'updates' ? 'aria-current="page"' : '' ?>><?= icon('bell') ?><span>Updates</span><?php if ($unreadUpdateCount): ?><small class="update-count"><?= $unreadUpdateCount > 99 ? '99+' : $unreadUpdateCount ?></small><?php endif; ?></a>
                 <a href="?page=account" class="nav-link<?= $page === 'account' ? ' is-active' : '' ?>" <?= $page === 'account' ? 'aria-current="page"' : '' ?>><?= icon('users') ?><span>My account</span></a>
-                <a href="<?= e(app_url($role, 'components')) ?>" class="nav-link<?= $isComponents ? ' is-active' : '' ?>" <?= $isComponents ? 'aria-current="page"' : '' ?>><?= icon('sparkle') ?><span>Interface kit</span></a>
-                <p class="nav-caption nav-caption-spaced">COMING IN LATER PHASES</p>
-                <span class="nav-link nav-pending"><?= icon('heart') ?><span>Condition reports</span><small>Later</small></span>
             </nav>
 
             <form action="?page=overview" method="post" class="logout-form"><?= csrf_field() ?><input type="hidden" name="action" value="logout"><button type="submit" class="nav-link logout-button"><?= icon('arrow') ?><span>Sign out</span></button></form>
@@ -110,7 +105,6 @@ $pageTitle = match ($page) {
 
         <main id="main-content" class="page-content" tabindex="-1">
             <?php if ($flash): ?><div class="alert account-flash <?= $flash['type'] === 'error' ? 'account-flash-error' : '' ?>" role="status"><?= icon($flash['type'] === 'error' ? 'close' : 'check', 'size-5') ?><span><?= e($flash['message']) ?></span></div><?php endif; ?>
-            <?php if (in_array($page, ['overview', 'components'], true)): ?><div class="preview-banner" role="note"><?= icon('sparkle', 'size-4') ?><strong>Pilot progress</strong><span>Grave profiles, care requests, photo evidence, and in-app updates are live. Automated condition reports remain for later.</span></div><?php endif; ?>
             <?php if ($page === 'cemeteries'): ?>
                 <?php require __DIR__ . '/pages/cemeteries.php'; ?>
             <?php elseif ($page === 'plots'): ?>
@@ -137,8 +131,6 @@ $pageTitle = match ($page) {
                 <?php require __DIR__ . '/pages/updates.php'; ?>
             <?php elseif ($page === 'account'): ?>
                 <?php require __DIR__ . '/pages/account.php'; ?>
-            <?php elseif ($isComponents): ?>
-                <?php require __DIR__ . '/pages/components.php'; ?>
             <?php else: ?>
                 <?php require __DIR__ . '/pages/' . $role . '.php'; ?>
             <?php endif; ?>
