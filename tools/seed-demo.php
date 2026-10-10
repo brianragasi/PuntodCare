@@ -13,18 +13,21 @@ date_default_timezone_set($app['timezone']);
 $root = dirname(__DIR__);
 $credentialsPath = $root . '/storage/demo-credentials.json';
 $emails = [
-    'admin' => 'pilot-admin@example.test',
     'family' => 'pilot-family@example.test',
     'caretaker' => 'pilot-caretaker@example.test',
 ];
 $names = [
-    'admin' => 'Pilot Demo Administrator',
     'family' => 'Pilot Demo Family',
     'caretaker' => 'Pilot Demo Caretaker',
 ];
 
 try {
     $connection = db();
+    $admin = $connection->query("SELECT id FROM users WHERE role = 'admin' AND status = 'active' ORDER BY id LIMIT 1")->fetch();
+    if (!$admin) {
+        throw new RuntimeException('Create an active administrator before seeding demo records.');
+    }
+    $adminId = (int) $admin['id'];
     $find = $connection->prepare('SELECT role, password_hash FROM users WHERE email = ?');
     $existing = [];
     foreach ($emails as $role => $email) {
@@ -52,7 +55,7 @@ try {
     $credentials = ['label' => 'FICTIONAL LOCAL DEMO — NO PAYMENT', 'created_at' => date(DATE_ATOM), 'accounts' => []];
     $connection->beginTransaction();
     $insertUser = $connection->prepare('INSERT INTO users (full_name, email, phone, password_hash, role, status) VALUES (?, ?, ?, ?, ?, ?)');
-    $ids = [];
+    $ids = ['admin' => $adminId];
     foreach ($emails as $role => $email) {
         $password = bin2hex(random_bytes(18));
         $insertUser->execute([$names[$role], $email, $role === 'caretaker' ? '09170000000' : null, password_hash($password, PASSWORD_DEFAULT), $role, $role === 'caretaker' ? 'verified' : 'active']);
@@ -105,7 +108,7 @@ try {
     }
     @chmod($credentialsPath, 0600);
     $connection->commit();
-    echo "Created three fictional demo accounts, one cemetery, one grave, and two ready-to-assign requests.\nCredentials: storage/demo-credentials.json\n";
+    echo "Created two fictional demo accounts, one cemetery, one grave, and two ready-to-assign requests. Use your existing administrator account.\nCredentials: storage/demo-credentials.json\n";
 } catch (Throwable $exception) {
     if (isset($connection) && $connection->inTransaction()) {
         $connection->rollBack();

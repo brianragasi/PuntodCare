@@ -8,7 +8,7 @@
 
 The design is included in `public/assets/app.css`; no npm or separate design server is needed to view the site.
 
-For a fictional three-role demonstration, run `php tools/seed-demo.php` after migrating. The sign-ins are saved only in the ignored `storage/demo-credentials.json`. Follow [PILOT.md](PILOT.md) for the walkthrough and verification command.
+For a fictional three-role demonstration, create an administrator first, then run `php tools/seed-demo.php` after migrating. The script adds one family and one caretaker account; their sign-ins are saved only in the ignored `storage/demo-credentials.json`. Follow [PILOT.md](PILOT.md) for the walkthrough and verification command.
 
 To try a care request, the administrator adds an active cemetery and service, then verifies a caretaker and grants cemetery access. A family registers a grave and opens **Request care** from its profile. The administrator assigns the request under **Care requests**, and the caretaker sees it under **Assigned jobs**. The caretaker confirms the grave, uploads a before photo and an after photo, and submits a work note. The family compares the photos and either approves the report or raises an issue. Each role can open **Updates** to see changes after reloading the page.
 
